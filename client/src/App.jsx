@@ -1,19 +1,5 @@
-import { useEffect, useState } from "react"
+import Signup from "./pages/Signup";
 
-function App() {
-  const [message, setMessage] = useState("")
-
-  useEffect(() => {
-    fetch("http://localhost:5000")
-      .then(res => res.json())
-      .then(data => setMessage(data.message))
-  }, [])
-
-  return (
-    <div className="p-20 text-3xl">
-      {message}
-    </div>
-  )
+export default function App() {
+  return <Signup />;
 }
-
-export default App
