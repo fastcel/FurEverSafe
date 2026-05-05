@@ -1,65 +1,59 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const { pool } = require("../db");
 
 const router = express.Router();
 
-// SIGNUP
+/* ======================================================
+   SIGNUP (TC-01 + TC-02)
+====================================================== */
 router.post("/signup", async (req, res) => {
   console.log("🔥 REQUEST HIT /signup");
 
   try {
     const { username, email, contact, password, role } = req.body;
 
-    // =========================
-    // VALIDATION (TC-01 RULES)
-    // =========================
-
+    // Missing fields
     if (!username || !email || !contact || !password || !role) {
       return res.status(400).json({
-        error: "All fields are required",
+        error: "Please fill in all required fields",
       });
     }
 
+    // Password constraint
     if (password.length < 8) {
       return res.status(400).json({
-        error: "Password must be at least 8 characters",
+        error: "Password must be at least 8 characters long",
       });
     }
 
-    // =========================
-    // CHECK DUPLICATE EMAIL (TC-02)
-    // =========================
-    const existingUser = await pool.query(
+    // Duplicate email
+    const emailCheck = await pool.query(
       "SELECT * FROM users WHERE email = $1",
       [email]
     );
 
-    if (existingUser.rows.length > 0) {
+    if (emailCheck.rows.length > 0) {
       return res.status(409).json({
-        error: "An account with this email already exists",
+        error: "This email is already registered. Try logging in instead.",
       });
     }
-    const existingUsername = await pool.query(
-    "SELECT * FROM users WHERE username = $1",
-    [username]
+
+    // Duplicate username
+    const usernameCheck = await pool.query(
+      "SELECT * FROM users WHERE username = $1",
+      [username]
     );
 
-    if (existingUsername.rows.length > 0) {
-    return res.status(409).json({
-        error: "Username already exists",
-    });
+    if (usernameCheck.rows.length > 0) {
+      return res.status(409).json({
+        error: "This username is already taken. Please choose another one.",
+      });
     }
 
-    
-    // =========================
-    // HASH PASSWORD
-    // =========================
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // =========================
-    // INSERT USER
-    // =========================
     await pool.query(
       `INSERT INTO users (username, email, contact_number, password, role)
        VALUES ($1, $2, $3, $4, $5)`,
@@ -67,11 +61,84 @@ router.post("/signup", async (req, res) => {
     );
 
     return res.status(201).json({
-      message: "User created successfully",
+      message: "Account created successfully. You can now log in.",
     });
+
   } catch (err) {
-    console.log("❌ ERROR:", err);
-    return res.status(500).json({ error: "Server error" });
+    console.log("❌ SIGNUP ERROR:", err);
+    return res.status(500).json({
+      error: "Something went wrong while creating account",
+    });
+  }
+});
+
+
+/* ======================================================
+   LOGIN (TC-03 + TC-04)
+====================================================== */
+router.post("/login", async (req, res) => {
+  console.log("🔥 REQUEST HIT /login");
+
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({
+        error: "Username and password are required",
+      });
+    }
+
+    const userResult = await pool.query(
+      "SELECT * FROM users WHERE username = $1",
+      [username]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(401).json({
+        error: "Invalid username or password",
+      });
+    }
+
+    const user = userResult.rows[0];
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        error: "Invalid username or password",
+      });
+    }
+
+    // JWT token (for future auth)
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      "secretkey",
+      { expiresIn: "1d" }
+    );
+
+    // Role-based response (TC-03)
+    let redirectTo = "/citizen-dashboard";
+
+    if (user.role === "ngo") {
+      redirectTo = "/ngo-dashboard";
+    }
+
+    return res.status(200).json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+      },
+      redirectTo,
+    });
+
+  } catch (err) {
+    console.log("❌ LOGIN ERROR:", err);
+    return res.status(500).json({
+      error: "Something went wrong during login",
+    });
   }
 });
 
