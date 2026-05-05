@@ -172,9 +172,9 @@ export default function SignupPage() {
               </button>
 
               <button
-                onClick={() => setRole("ngo")}
+                onClick={() => setRole("ngo_rep")}
                 className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition ${
-                  role === "ngo"
+                  role === "ngo_rep"
                     ? "bg-[#e87aab] text-white"
                     : "bg-white text-gray-600 border-gray-300"
                 }`}
