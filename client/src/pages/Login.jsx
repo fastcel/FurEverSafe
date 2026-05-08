@@ -39,8 +39,7 @@ export default function LoginPage() {
     // ✅ store token (basic auth)
     localStorage.setItem("token", res.data.token);
 
-    // ✅ redirect based on role
-    window.location.href = res.data.redirectTo;
+    window.location.href = "/citizen-dashboard";
 
   } catch (err) {
     const message =
