@@ -2,12 +2,16 @@ import Sidebar from "../components/Sidebar";
 
 export default function Layout({ children }) {
   return (
-    <div style={{ display: "flex" }}>
+    <div className="flex w-screen min-h-screen bg-[#f0ebe0] overflow-x-hidden">
+      
+      {/* Sidebar */}
       <Sidebar />
 
-      <div style={{ flex: 1, padding: "20px" }}>
+      {/* Main Content */}
+      <main className="flex-1 w-full">
         {children}
-      </div>
+      </main>
+
     </div>
   );
 }

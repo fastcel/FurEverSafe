@@ -7,7 +7,7 @@ export default function Sidebar() {
   const [active, setActive] = useState("Home");
 
   return (
-    <div className="w-64 h-screen bg-secondary font-bold flex flex-col justify-between sticky top-0">
+    <div className="w-64 min-h-screen bg-secondary font-bold flex flex-col justify-between">
 
       {/* Logo */}
       <div className="flex flex-col items-center pt-6 pb-2">
