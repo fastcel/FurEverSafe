@@ -1,13 +1,15 @@
-import Sidebar from "../components/Sidebar";
+import React from 'react';
+import Sidebar from './sidebar';
 
 export default function Layout({ children }) {
   return (
-    <div style={{ display: "flex" }}>
+    // Use w-screen and h-screen to fill the entire browser window
+    <div className="flex w-screen h-screen bg-[#EDEFD7] overflow-hidden">
       <Sidebar />
-
-      <div style={{ flex: 1, padding: "20px" }}>
+      {/* flex-1 makes this area take up all space not used by the sidebar */}
+      <main className="flex-1 overflow-y-auto p-10">
         {children}
-      </div>
+      </main>
     </div>
   );
 }

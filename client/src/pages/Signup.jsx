@@ -95,7 +95,7 @@ export default function SignupPage() {
               Username <span className="text-red-500">*</span>
             </label>
             <input
-              name="username"x
+              name="username"
               value={form.username}
               onChange={handleChange}
               placeholder="Enter your Username..."
