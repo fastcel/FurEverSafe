@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import CitizenDashboard from "./pages/CitizenDashboard";
+import ReportAbuse from "./pages/ReportAbuse";
 
 export default function App() {
   return (
@@ -16,6 +17,10 @@ export default function App() {
         <Route
           path="/citizen-dashboard"
           element={<CitizenDashboard />}
+        />
+        <Route
+          path="/report-abuse"
+          element={<ReportAbuse />}
         />
       </Routes>
     </BrowserRouter>
