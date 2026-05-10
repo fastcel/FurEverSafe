@@ -14,6 +14,8 @@ import FAQ from "./pages/FAQ";
 import NGOProfile from "./pages/NGOProfile";
 import NGOEditProfile from "./pages/NGOEditProfile";
 import NGODeleteAccount from "./pages/NGODeleteAccount";
+import AdminUsers from "./pages/AdminUsers";
+import AdminAuditLogs from "./pages/AdminAuditLogs";
 
 export default function App() {
   return (
@@ -33,6 +35,8 @@ export default function App() {
         <Route path="/ngo-profile" element={<NGOProfile />} />
         <Route path="/ngo-edit-profile" element={<NGOEditProfile />} />
         <Route path="/ngo-delete-account" element={<NGODeleteAccount />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />   
         {/* Forgot Password Flow */}
         <Route path="/forgot-password" element={<ForgotPassword1 />} />
         <Route path="/forgot-password/email-sent" element={<ForgotPassword2 />} />
