@@ -4,6 +4,8 @@ import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import CitizenDashboard from "./pages/CitizenDashboard";
 import ReportAbuse from "./pages/ReportAbuse";
+import NGOAbuseReports from "./pages/NGOAbuseReports";
+import NGOAbuseReportDetails from "./pages/NGOAbuseReportDetails";
 
 export default function App() {
   return (
@@ -21,6 +23,15 @@ export default function App() {
         <Route
           path="/report-abuse"
           element={<ReportAbuse />}
+        />
+        {/* NGO Routes */}
+        <Route
+          path="/ngo-abuse-reports"
+          element={<NGOAbuseReports />}
+        />
+        <Route
+          path="/ngo-abuse-reports/:id"
+          element={<NGOAbuseReportDetails />}
         />
       </Routes>
     </BrowserRouter>
