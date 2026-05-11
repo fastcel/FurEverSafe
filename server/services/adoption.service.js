@@ -1,5 +1,6 @@
 const { pool } = require("../db");
 const { createNotification } = require("./notification.service");
+const { addReward } = require("./reward.service");
 
 /* ======================================================
    SUBMIT APPLICATION
@@ -138,12 +139,25 @@ const getUserApplications = async (user_id, tab) => {
 /* ======================================================
    UPDATE ADOPTION STATUS (NGO)
 ====================================================== */
+
 const updateAdoptionStatus = async (application_id, status) => {
   const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
 
+    /* ======================================================
+       1. VALIDATE STATUS
+    ====================================================== */
+    const allowedStatuses = ["approved", "rejected", "cancelled"];
+
+    if (!allowedStatuses.includes(status)) {
+      throw new Error("Invalid status value");
+    }
+
+    /* ======================================================
+       2. UPDATE APPLICATION
+    ====================================================== */
     const result = await client.query(
       `
       UPDATE adoption_applications
@@ -154,8 +168,15 @@ const updateAdoptionStatus = async (application_id, status) => {
       [status, application_id]
     );
 
+    if (!result.rows.length) {
+      throw new Error("Invalid application_id");
+    }
+
     const data = result.rows[0];
 
+    /* ======================================================
+       3. GET PET NAME
+    ====================================================== */
     const petResult = await client.query(
       `
       SELECT p.name
@@ -166,11 +187,15 @@ const updateAdoptionStatus = async (application_id, status) => {
       [data.listing_id]
     );
 
-    const petName = petResult.rows[0]?.name;
+    if (!petResult.rows.length) {
+      throw new Error("Pet not found for listing");
+    }
 
-    await client.query("COMMIT");
+    const petName = petResult.rows[0].name;
 
-    // 🔥 NOTIFICATION AFTER COMMIT
+    /* ======================================================
+       4. BUILD MESSAGE
+    ====================================================== */
     let message = "";
 
     if (status === "approved") {
@@ -181,14 +206,42 @@ const updateAdoptionStatus = async (application_id, status) => {
       message = `⚠️ Your adoption application for ${petName} was cancelled`;
     }
 
-    await createNotification({
-      user_id: data.user_id,
-      type: "adoption",
-      message,
-      source_type: "adoption_application",
-      source_id: application_id
-    });
+    /* ======================================================
+       5. COMMIT DB CHANGES
+    ====================================================== */
+    await client.query("COMMIT");
 
+    /* ======================================================
+       6. SIDE EFFECTS (SAFE AFTER COMMIT)
+    ====================================================== */
+    try {
+      if (status === "approved") {
+        await addReward({
+          user_id: data.user_id,
+          points: 50,
+          source_type: "adoption",
+          source_id: application_id
+        });
+      }
+    } catch (err) {
+      console.log("🔥 Reward failed (non-blocking):", err.message);
+    }
+
+    try {
+      await createNotification({
+        user_id: data.user_id,
+        type: "adoption",
+        message,
+        source_type: "adoption_application",
+        source_id: application_id
+      });
+    } catch (err) {
+      console.log("🔥 Notification failed (non-blocking):", err.message);
+    }
+
+    /* ======================================================
+       7. RETURN RESULT
+    ====================================================== */
     return result.rows[0];
 
   } catch (err) {

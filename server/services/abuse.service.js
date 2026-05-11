@@ -1,16 +1,14 @@
 const { pool } = require("../db");
 const { createNotification } = require("./notification.service");
+const { addReward } = require("./reward.service");
 
-/* ======================================================
-   SUBMIT ABUSE REPORT
-====================================================== */
+
 const submitReport = async (data) => {
   const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
 
-    // STEP 1: CREATE LOCATION
     const locationResult = await client.query(
       `
       INSERT INTO locations (latitude, longitude, address)
@@ -22,21 +20,12 @@ const submitReport = async (data) => {
 
     const location_id = locationResult.rows[0].location_id;
 
-    // STEP 2: CREATE REPORT
     const trackingId = "TRK-" + Date.now();
 
     const reportResult = await client.query(
       `
       INSERT INTO abuse_reports
-      (
-        user_id,
-        location_id,
-        description,
-        abuse_datetime,
-        severity,
-        pet_type_id,
-        tracking_id
-      )
+      (user_id, location_id, description, abuse_datetime, severity, pet_type_id, tracking_id)
       VALUES ($1,$2,$3,$4,$5,$6,$7)
       RETURNING *
       `,
@@ -53,7 +42,6 @@ const submitReport = async (data) => {
 
     const report = reportResult.rows[0];
 
-    // STEP 3: IMAGES
     if (data.images?.length) {
       for (const img of data.images) {
         await client.query(
@@ -68,7 +56,14 @@ const submitReport = async (data) => {
 
     await client.query("COMMIT");
 
-    // 🔥 NOTIFICATION (after commit)
+    // ✅ SIDE EFFECTS (AFTER COMMIT)
+    await addReward({
+      user_id: data.user_id,
+      points: 30,
+      source_type: "abuse_report",
+      source_id: report.report_id
+    });
+
     await createNotification({
       user_id: data.user_id,
       type: "abuse_report",

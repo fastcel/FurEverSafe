@@ -7,6 +7,7 @@ const adoptionRoutes = require("./routes/adoption.routes");
 const app = express();
 const abuseRoutes = require("./routes/abuse.routes");
 const notificationRoutes = require("./routes/notification.route");
+const milestoneRoutes = require("./routes/milestone.route");
 
 app.use(cors());
 app.use(express.json());
@@ -18,6 +19,8 @@ app.use(
   "/api/adoption",
   adoptionRoutes
 );
+
+app.use("/api/milestones", milestoneRoutes);
 
 
 app.use("/api/abuse", abuseRoutes);
