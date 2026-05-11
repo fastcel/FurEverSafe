@@ -1,13 +1,88 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import Layout from '../../components/Layout';
 
 export default function AdoptionForm() {
-  const { petName } = useParams();
+  const { listingId } = useParams();
+  const petName = listingId;
   const navigate = useNavigate();
+
+  // --- UI STATES ---
   const [step, setStep] = useState(1);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [listingData, setListingData] = useState(null);
+
+  // --- FORM DATA (Mapped to Backend Service Keys) ---
+  const [formData, setFormData] = useState({
+    full_name: '',
+    contact_number: '+923337564321',
+    email: 'khansarah@gmail.com',
+    preferred_contact_method: 'Email',
+    house_type: 'House',
+    has_children: 'No',
+    other_pets: 'None',
+    pet_alone_hours: '1-2 hours',
+    monthly_income_range: 'Over Rs. 50,000',
+    monthly_budget_range: 'Over Rs. 3000',
+    motivation: ''
+  });
+
+  // 1. Fetch the listing_id for this pet
+  useEffect(() => {
+    const fetchListingDetails = async () => {
+      try {
+        // Fetch all pets and find the one that matches this listingId
+        const res = await axios.get(`http://localhost:5000/api/pets`);
+        const found = res.data.find(p => String(p.listing_id) === String(listingId));
+
+        if (found) {
+          setListingData(found);
+        } else {
+          console.error("Listing ID not found in pet list");
+        }
+      } catch (err) {
+        console.error("Error fetching listing:", err);
+      }
+    };
+    fetchListingDetails();
+  }, [listingId]);
+
+  const handleInput = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // 2. Final Submission to Backend
+  const handleSubmit = async () => {
+    // Now we use the listingId directly from the URL params!
+    if (!listingId) {
+      alert("Error: Missing Listing ID.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post('http://localhost:5000/api/adoption/apply', {
+        listing_id: listingId, // Direct use of the URL param
+        ...formData
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.status === 201) {
+        setIsSubmitted(true);
+      }
+    } catch (err) {
+      alert(err.response?.data?.error || "Submission failed");
+    } finally {
+      setLoading(false);
+      setShowConfirm(false);
+    }
+  };
 
   const nextStep = () => setStep(step + 1);
   const prevStep = () => setStep(step - 1);
@@ -15,15 +90,12 @@ export default function AdoptionForm() {
   if (isSubmitted) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-full">
+        <div className="flex items-center justify-center h-full py-20">
           <div className="bg-[#DED9C4] p-16 rounded-sm border-2 border-black text-center max-w-lg">
             <div className="text-7xl mb-6 text-green-600">✔</div>
-            <h2 className="text-3xl font-bold text-[#6A1B9A] mb-4 uppercase tracking-tighter">Application Submitted!</h2>
-            <p className="text-[#C2185B] mb-10 font-bold leading-relaxed">Thank you for offering a loving home. <br /> A registered NGO in your area has been notified and will review your application shortly.</p>
-            <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <button onClick={() => navigate('/')} className="bg-[#C2185B] text-white px-8 py-3 border-2 border-black font-bold hover:-translate-y-0.5 active:translate-y-0 transition-all uppercase tracking-widest text-xs">Return Home</button>
-              <button onClick={() => navigate('/')} className="bg-white text-black px-8 py-3 border-2 border-black font-bold hover:-translate-y-0.5 active:translate-y-0 transition-all uppercase tracking-widest text-xs">Adopt Another</button>
-            </div>
+            <h2 className="text-3xl font-bold text-[#6A1B9A] mb-4 uppercase">Success!</h2>
+            <p className="text-[#C2185B] mb-10 font-bold">Your application for {petName} is pending review.</p>
+            <button onClick={() => navigate('/notifications')} className="bg-[#C2185B] text-white px-8 py-3 border-2 border-black font-bold">Track Status</button>
           </div>
         </div>
       </Layout>
@@ -33,166 +105,125 @@ export default function AdoptionForm() {
   return (
     <Layout>
       {showConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-[#EDEFD7] p-8 rounded-sm border-2 border-black text-center max-w-sm">
-            <div className="text-orange-500 text-5xl mb-4">⚠</div>
-            <h3 className="text-xl font-bold text-[#C2185B] mb-2">Submit this Adoption Form?</h3>
-            <p className="mb-6">Once submitted, your request will be sent to registered NGO in your area.</p>
+            <h3 className="text-xl font-bold text-[#C2185B] mb-4">Submit Application?</h3>
             <div className="flex justify-center gap-4">
-              <button onClick={() => setShowConfirm(false)} className="bg-red-400 px-6 py-1 border-2 border-black">No, Go Back</button>
-              <button onClick={() => setIsSubmitted(true)} className="bg-green-300 px-6 py-1 border-2 border-black">Yes, Submit</button>
+              <button onClick={() => setShowConfirm(false)} className="bg-red-400 px-6 py-2 border-2 border-black font-bold">No</button>
+              <button onClick={handleSubmit} className="bg-green-300 px-6 py-2 border-2 border-black font-bold">
+                {loading ? "Submitting..." : "Yes, Submit"}
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="p-8">
-        <h1 className="text-3xl font-bold text-[#6A1B9A] mb-8">Adoption Form</h1>
-        <div className="flex justify-between items-start mb-8">
+      <div className="p-8 max-w-5xl mx-auto">
+        <h1 className="text-4xl font-black text-[#3A1D44] mb-8">Adoption Form</h1>
+
+        {/* Pet Summary */}
+        <div className="flex justify-between items-center bg-white p-6 border-2 border-black mb-8 rounded-sm">
           <div>
-            <h2 className="text-2xl font-bold text-[#C2185B]">Adopt {petName}</h2>
-            <p className="text-gray-600">Ragdoll - 3 months</p>
-            <p className="text-gray-600 font-bold">Lahore</p>
+            <h2 className="text-2xl font-bold text-[#C2185B]">Adopting {petName}</h2>
+            <p className="text-gray-600">{listingData?.breed} • {listingData?.city}</p>
           </div>
-          <img src="https://placecats.com/150/100" className="rounded-sm border-2 border-black shadow-md" alt="pet" />
+          {listingData?.image_url && <img src={listingData.image_url} className="w-32 h-24 border-2 border-black object-cover" alt="pet" />}
         </div>
 
-        {/* Form Container */}
-        <div className="bg-[#DED9C4] p-8 border-2 border-black rounded-sm max-w-4xl mx-auto">
-          {/* Progress Bar */}
-          <div className="flex items-center justify-center gap-8 mb-8">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 border-black ${step >= 1 ? 'bg-[#C2185B] text-white' : 'bg-gray-300'}`}>1</div>
-            <div className="h-[2px] w-20 bg-gray-400"></div>
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 border-black ${step >= 2 ? 'bg-[#C2185B] text-white' : 'bg-gray-300'}`}>2</div>
-            <div className="h-[2px] w-20 bg-gray-400"></div>
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 border-black ${step >= 3 ? 'bg-[#C2185B] text-white' : 'bg-gray-300'}`}>3</div>
+        {/* Multi-Step Form */}
+        <div className="bg-[#DED9C4] p-8 border-2 border-black rounded-sm shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+
+          {/* Progress Indicators */}
+          <div className="flex items-center justify-center gap-4 mb-12">
+            {[1, 2, 3].map(n => (
+              <React.Fragment key={n}>
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 border-black font-black text-xl ${step >= n ? 'bg-[#C2185B] text-white' : 'bg-white'}`}>{n}</div>
+                {n < 3 && <div className="w-16 h-1 bg-black/20"></div>}
+              </React.Fragment>
+            ))}
           </div>
 
+          {/* STEP 1: Personal Info */}
           {step === 1 && (
-            <div className="grid grid-cols-2 gap-12">
-              <div className="space-y-6">
-                <h3 className="font-bold text-lg text-[#6A1B9A] uppercase tracking-wider border-b-2 border-black pb-1 inline-block">Your Information</h3>
-                <div className="space-y-4 pt-2">
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Full Name *</label>
-                    <input type="text" className="w-full border-2 border-black p-3 bg-white/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#C2185B]/20 transition-all" placeholder="Enter your full name..." />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Contact Number *</label>
-                    <input type="text" className="w-full border-2 border-black p-3 bg-white/50 focus:bg-white outline-none" defaultValue="+923337564321" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Email Address *</label>
-                    <input type="email" className="w-full border-2 border-black p-3 bg-white/50 focus:bg-white outline-none" defaultValue="khansarah@gmail.com" />
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="space-y-4">
+                <h3 className="font-bold text-[#6A1B9A] uppercase text-sm border-b-2 border-black pb-1">Personal Details</h3>
+                <InputField label="Full Name" name="full_name" value={formData.full_name} onChange={handleInput} />
+                <InputField label="Contact Number" name="contact_number" value={formData.contact_number} onChange={handleInput} />
+                <InputField label="Email" name="email" value={formData.email} onChange={handleInput} />
               </div>
-              <div>
-                <h3 className="font-bold text-lg text-[#6A1B9A] uppercase tracking-wider border-b-2 border-black pb-1 inline-block mb-6">Address/Residency</h3>
-                <div className="bg-[#EDEFD7] h-52 border-2 border-black relative">
-                  <div className="absolute inset-0 flex items-center justify-center font-bold text-gray-400">MAP UI COMPONENT</div>
-                </div>
-                <input type="text" className="w-full border-2 border-black p-3 mt-6 bg-white/50 focus:bg-white outline-none" placeholder="Or Enter Address Manually..." />
+              <div className="space-y-4">
+                <h3 className="font-bold text-[#6A1B9A] uppercase text-sm border-b-2 border-black pb-1">Contact Preference</h3>
+                <select name="preferred_contact_method" value={formData.preferred_contact_method} onChange={handleInput} className="w-full border-2 border-black p-3 bg-white font-bold outline-none">
+                  <option value="Email">Email</option>
+                  <option value="Phone">Phone Call</option>
+                  <option value="WhatsApp">WhatsApp</option>
+                </select>
               </div>
             </div>
           )}
 
+          {/* STEP 2: Lifestyle Info */}
           {step === 2 && (
-            <div className="space-y-8">
-              <h3 className="font-bold text-xl text-[#6A1B9A] uppercase tracking-wider border-b-2 border-black pb-1 inline-block mb-4">Living Situation</h3>
-
-              <div className="grid grid-cols-2 gap-x-20 gap-y-8">
-                {/* House Type */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold uppercase text-gray-500">House Type *</label>
-                  <select className="w-full border-2 border-black p-3 bg-white/50 appearance-none cursor-pointer font-bold focus:bg-white outline-none">
-                    <option>Apartment</option>
-                    <option>House</option>
-                    <option>Studio</option>
-                  </select>
-                </div>
-
-                {/* Children at home? */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold uppercase text-gray-500">Children at home? *</label>
-                  <div className="flex gap-10 mt-3">
-                    <label className="flex items-center gap-3 cursor-pointer group">
-                      <input type="radio" name="children" className="w-5 h-5 accent-[#C2185B]" />
-                      <span className="font-bold text-sm">Yes</span>
-                    </label>
-                    <label className="flex items-center gap-3 cursor-pointer group">
-                      <input type="radio" name="children" className="w-5 h-5 accent-[#C2185B]" defaultChecked />
-                      <span className="font-bold text-sm">No</span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Other Pets at home? */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold uppercase text-gray-500">Other Pets? *</label>
-                  <select className="w-full border-2 border-black p-3 bg-white/50 font-bold focus:bg-white outline-none">
-                    <option>None</option>
-                    <option>Dog</option>
-                    <option>Cat</option>
-                  </select>
-                </div>
-
-                {/* Pet Hours Alone Per Day */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold uppercase text-gray-500">Hours Alone? *</label>
-                  <select className="w-full border-2 border-black p-3 bg-white/50 font-bold focus:bg-white outline-none">
-                    <option>1-2 hours</option>
-                    <option>3-5 hours</option>
-                    <option>6+ hours</option>
-                  </select>
-                </div>
-
-                {/* Monthly Income */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold uppercase text-gray-500">Monthly Income *</label>
-                  <select className="w-full border-2 border-black p-3 bg-white/50 font-bold focus:bg-white outline-none">
-                    <option>Under Rs. 20,000</option>
-                    <option>Rs. 20,000 - 50,000</option>
-                    <option>Over Rs. 50,000</option>
-                  </select>
-                </div>
-
-                {/* Budget Allocated for Pet Care */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold uppercase text-gray-500">Care Budget *</label>
-                  <select className="w-full border-2 border-black p-3 bg-white/50 font-bold focus:bg-white outline-none">
-                    <option>Under Rs. 1000</option>
-                    <option>Rs. 1000 - 3000</option>
-                    <option>Over Rs. 3000</option>
-                  </select>
-                </div>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <SelectField label="House Type" name="house_type" value={formData.house_type} onChange={handleInput} options={['House', 'Apartment', 'Studio']} />
+              <SelectField label="Children at home?" name="has_children" value={formData.has_children} onChange={handleInput} options={['Yes', 'No']} />
+              <SelectField label="Other Pets?" name="other_pets" value={formData.other_pets} onChange={handleInput} options={['None', 'Dog', 'Cat', 'Other']} />
+              <SelectField label="Pet Alone Hours" name="pet_alone_hours" value={formData.pet_alone_hours} onChange={handleInput} options={['1-2 hours', '3-5 hours', '6+ hours']} />
+              <SelectField label="Monthly Income" name="monthly_income_range" value={formData.monthly_income_range} onChange={handleInput} options={['Under Rs. 20,000', 'Rs. 20,000 - 50,000', 'Over Rs. 50,000']} />
+              <SelectField label="Care Budget" name="monthly_budget_range" value={formData.monthly_budget_range} onChange={handleInput} options={['Under Rs. 1000', 'Rs. 1000 - 3000', 'Over Rs. 3000']} />
             </div>
           )}
 
+          {/* STEP 3: Motivation */}
           {step === 3 && (
-            <div className="space-y-6">
-              <h3 className="font-bold text-xl text-[#6A1B9A] uppercase tracking-wider border-b-2 border-black pb-1 inline-block">Adoption Motivation</h3>
-              <div className="pt-2">
-                <label className="block text-xs font-bold uppercase text-gray-500 mb-3">Why do you want to adopt {petName}? *</label>
-                <textarea className="w-full h-44 border-2 border-black p-5 bg-white/50 focus:bg-white outline-none transition-all resize-none font-medium leading-relaxed" placeholder="Tell us your reason for adopting..."></textarea>
-              </div>
+            <div className="space-y-4">
+              <label className="block font-black text-[#6A1B9A] uppercase text-sm">Why do you want to adopt {petName}? *</label>
+              <textarea
+                name="motivation"
+                value={formData.motivation}
+                onChange={handleInput}
+                className="w-full h-48 border-2 border-black p-4 bg-white outline-none font-medium text-lg shadow-inner"
+                placeholder="Please describe your experience with pets and why you chose this specific animal..."
+              />
             </div>
           )}
 
-          {/* Nav Buttons */}
-          <div className="flex justify-end gap-4 mt-12">
-            {step > 1 && (
-              <button onClick={prevStep} className="bg-white px-8 py-2 border-2 border-black rounded-sm font-bold">← Back</button>
-            )}
-            {step < 3 ? (
-              <button onClick={nextStep} className="bg-[#C2185B] text-white px-8 py-2 border-2 border-black rounded-sm font-bold">Next →</button>
-            ) : (
-              <button onClick={() => setShowConfirm(true)} className="bg-[#C2185B] text-white px-8 py-2 border-2 border-black rounded-sm font-bold">Submit</button>
-            )}
+          {/* Navigation Buttons */}
+          <div className="flex justify-between mt-12 border-t-2 border-black pt-8">
+            <button
+              onClick={prevStep}
+              disabled={step === 1}
+              className={`px-8 py-2 border-2 border-black font-black uppercase text-sm transition-all ${step === 1 ? 'opacity-0' : 'bg-white hover:bg-gray-100'}`}
+            >
+              ← Back
+            </button>
+            <button
+              onClick={step === 3 ? () => setShowConfirm(true) : nextStep}
+              className="bg-[#C2185B] text-white px-10 py-2 border-2 border-black font-black uppercase text-sm hover:-translate-y-1 active:translate-y-0 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+            >
+              {step === 3 ? "Finish" : "Next →"}
+            </button>
           </div>
         </div>
       </div>
     </Layout>
   );
 }
+
+// Reusable Helper Components
+const InputField = ({ label, ...props }) => (
+  <div>
+    <label className="block text-[10px] font-black uppercase text-gray-500 mb-1">{label} *</label>
+    <input {...props} className="w-full border-2 border-black p-3 bg-white outline-none font-bold focus:ring-2 focus:ring-pink-500/20" />
+  </div>
+);
+
+const SelectField = ({ label, options, ...props }) => (
+  <div>
+    <label className="block text-[10px] font-black uppercase text-gray-500 mb-1">{label} *</label>
+    <select {...props} className="w-full border-2 border-black p-3 bg-white font-black outline-none cursor-pointer">
+      {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+    </select>
+  </div>
+);
