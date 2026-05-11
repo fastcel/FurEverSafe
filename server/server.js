@@ -1,9 +1,11 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
 const authRoutes = require("./routes/auth"); 
 const petRoutes = require("./routes/pet.routes");
 const adoptionRoutes = require("./routes/adoption.routes");
+const adminUserRoutes = require("./routes/admin.users.routes");
 const app = express();
 const abuseRoutes = require("./routes/abuse.routes");
 
@@ -17,6 +19,7 @@ app.use(
   "/api/adoption",
   adoptionRoutes
 );
+app.use("/api/admin", adminUserRoutes);
 
 
 app.use("/api/abuse", abuseRoutes);
