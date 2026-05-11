@@ -4,6 +4,7 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { pool } = require("../db");
+const auditService = require("../services/audit.service");
 
 /* ======================================================
    SIGNUP
@@ -39,11 +40,22 @@ router.post("/signup", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    await pool.query(
+    const result = await pool.query(
       `INSERT INTO users (name, email, contact_number, password_hash, role)
-       VALUES ($1, $2, $3, $4, $5)`,
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING user_id`,
       [name, email, contact, hashedPassword, role]
     );
+
+    const newUserId = result.rows[0].user_id;
+
+    await auditService.createAuditLog({
+      admin_id: newUserId,
+      action: "SIGNUP",
+      target_type: "user",
+      target_id: newUserId,
+      description: `New user registered: ${email}`,
+    });
 
     return res.status(201).json({
       message: "Account created successfully",
@@ -74,7 +86,7 @@ router.post("/login", async (req, res) => {
     }
 
     const userResult = await pool.query(
-      "SELECT * FROM users WHERE name = $1",
+      "SELECT * FROM users WHERE name = $1 AND is_active = true",
       [username]
     );
 
@@ -102,7 +114,7 @@ router.post("/login", async (req, res) => {
         id: user.user_id,
         role: user.role,
       },
-      "secretkey",
+      process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
 
@@ -110,6 +122,14 @@ router.post("/login", async (req, res) => {
       user.role === "ngo"
         ? "/ngo-dashboard"
         : "/citizen-dashboard";
+
+    await auditService.createAuditLog({
+      admin_id: user.user_id,
+      action: "LOGIN",
+      target_type: "auth",
+      target_id: user.user_id,
+      description: `User logged in: ${user.email}`,
+    });
 
     return res.status(200).json({
       message: "Login successful",
