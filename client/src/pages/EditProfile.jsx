@@ -23,12 +23,17 @@ export default function EditProfile({ role = "user", initialData }) {
 
   const profileFields = PROFILE_FIELDS[role];
 
-  const [showSuccess, setShowSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState({
     old: false,
     new: false,
     confirm: false,
   });
+  const [modal, setModal] = useState({
+    open: false,
+    type: "", // "error" / "success"
+    message: "",
+  });
+  const [isSaving, setIsSaving] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -47,56 +52,61 @@ export default function EditProfile({ role = "user", initialData }) {
   // ─────────────────────────────────────────────
   // FETCH PROFILE FROM BACKEND
   // ─────────────────────────────────────────────
- useEffect(() => {
-  const fetchProfile = async () => {
-    try {
-      const token = localStorage.getItem("token");
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
 
-      const res = await fetch("http://localhost:5000/api/edit-profile", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+        const res = await fetch("http://localhost:5000/api/profile", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-      const data = await res.json();
+        const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error);
+        if (!res.ok) throw new Error(data.error);
 
-      setForm((prev) => ({
-        ...prev,
-        name: data.name || "",
-        email: data.email || "",
-        phone: data.contact_number || "",
-        registrationNo: data.registrationNo || "",
-        website: data.website || "",
-      }));
-    } catch (err) {
-      console.error("FETCH PROFILE ERROR:", err.message);
-    }
-  };
+        setForm((prev) => ({
+          ...prev,
+          name: data.name || "",
+          email: data.email || "",
+          phone: data.contact_number || "",
+          registrationNo: data.registrationNo || "",
+          website: data.website || "",
+        }));
+      } catch (err) {
+        console.error("FETCH PROFILE ERROR:", err.message);
+      }
+    };
 
-  fetchProfile();
-}, []);
+    fetchProfile();
+  }, []);
 
   // ─────────────────────────────────────────────
   // SAVE PROFILE (PUT API)
   // ─────────────────────────────────────────────
   const handleSave = async () => {
     try {
+      setIsSaving(true);
+
       const token = localStorage.getItem("token");
 
       const payload = {
         name: form.name,
         email: form.email,
         contact_number: form.phone,
-        oldPassword: form.oldPassword,
-        newPassword: form.newPassword,
-        confirmPassword: form.confirmPassword,
       };
 
-      const res = await fetch("http://localhost:5000/profile", {
-        method: "PUT",
+      if (form.oldPassword || form.newPassword || form.confirmPassword) {
+        payload.oldPassword = form.oldPassword;
+        payload.newPassword = form.newPassword;
+        payload.confirmPassword = form.confirmPassword;
+      }
+
+      const res = await fetch("http://localhost:5000/api/profile", {
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -108,17 +118,26 @@ export default function EditProfile({ role = "user", initialData }) {
 
       if (!res.ok) throw new Error(data.error);
 
-      setShowSuccess(true);
+      setModal({
+        open: true,
+        type: "success",
+        message: "Profile updated successfully!",
+      });
     } catch (err) {
       console.error("UPDATE PROFILE ERROR:", err.message);
-      alert(err.message);
+      setModal({
+        open: true,
+        type: "error",
+        message: err.message,
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
     <Layout>
       <div className="w-full min-h-screen bg-[#f0ebe0] flex flex-col py-10 px-10">
-
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-[#3a3028]">User Profile</h1>
           <button
@@ -207,29 +226,49 @@ export default function EditProfile({ role = "user", initialData }) {
         {/* SAVE BUTTON → NOW CONNECTED */}
         <button
           onClick={handleSave}
-          className="w-full bg-[#d63384] hover:bg-[#b02770] text-white font-bold py-2.5 rounded"
+          disabled={isSaving}
+          className={`w-full font-bold py-2.5 rounded transition flex items-center justify-center gap-2
+    ${
+      isSaving
+        ? "bg-gray-400 cursor-not-allowed text-white"
+        : "bg-[#d63384] hover:bg-[#b02770] text-white"
+    }`}
         >
-          Save
+          {isSaving ? (
+            <>
+              <span className="animate-spin">⏳</span>
+              Saving...
+            </>
+          ) : (
+            "Save"
+          )}
         </button>
       </div>
 
-      {showSuccess && (
+      {modal.open && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl p-10 flex flex-col items-center gap-4 w-72">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-4xl">
-              ✅
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-[350px] text-center">
+            <div className="text-4xl mb-3">
+              {modal.type === "error" ? "❌" : "✅"}
             </div>
-            <p className="text-[#3a3028] font-bold text-base text-center">
-              Changes saved successfully!
-            </p>
+
+            <h2 className="text-lg font-bold text-[#3a3028] mb-3">
+              {modal.type === "error" ? "Error" : "Success"}
+            </h2>
+
+            <p className="text-sm text-gray-600 mb-6">{modal.message}</p>
+
             <button
               onClick={() => {
-                setShowSuccess(false);
-                navigate("/profile");
+                setModal({ open: false, type: "", message: "" });
+
+                if (modal.type === "success") {
+                  navigate("/profile");
+                }
               }}
-              className="bg-[#d63384] hover:bg-[#b02770] text-white font-bold px-10 py-2 rounded"
+              className="px-6 py-2 rounded bg-[#d63384] hover:bg-[#b02770] text-white font-bold"
             >
-              Return
+              OK
             </button>
           </div>
         </div>

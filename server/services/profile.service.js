@@ -56,6 +56,61 @@ const updateProfile = async (userId, data) => {
         throw new Error("New passwords do not match");
       }
 
+      if (data.newPassword.length < 8) {
+        throw new Error("Password must be at least 8 characters");
+      }
+
+      // check email uniqueness
+      if (data.email) {
+        const emailCheck = await client.query(
+          `
+          SELECT user_id
+          FROM users
+          WHERE email = $1
+          AND user_id != $2
+          `,
+          [data.email, userId]
+        );
+
+        if (emailCheck.rows.length > 0) {
+          throw new Error("Email already in use");
+        }
+      }
+
+      // check contact uniqueness
+      if (data.contact_number) {
+        const phoneCheck = await client.query(
+          `
+          SELECT user_id
+          FROM users
+          WHERE contact_number = $1
+          AND user_id != $2
+          `,
+          [data.contact_number, userId]
+        );
+
+        if (phoneCheck.rows.length > 0) {
+          throw new Error("Phone number already in use");
+        }
+      }
+
+      // check username uniqueness
+      if (data.name) {
+        const nameCheck = await client.query(
+          `
+          SELECT user_id
+          FROM users
+          WHERE name = $1
+          AND user_id != $2
+          `,
+          [data.name, userId]
+        );
+
+        if (nameCheck.rows.length > 0) {
+          throw new Error("Username already in use");
+        }
+      }
+      
       // hash new password
       passwordHash = await bcrypt.hash(data.newPassword, 10);
     }
@@ -103,7 +158,34 @@ const getProfile = async (userId) => {
   return result.rows[0];
 };
 
+const deleteProfile = async (userId) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // optional: soft delete safer in real apps
+    await client.query(
+      `
+      UPDATE users
+      SET is_active = false
+      WHERE user_id = $1
+      `,
+      [userId]
+    );
+
+    await client.query("COMMIT");
+
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   updateProfile,
-  getProfile
+  getProfile,
+  deleteProfile
 };
