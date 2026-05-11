@@ -42,7 +42,8 @@ export default function LoginPage() {
     });
 
     localStorage.setItem("token", res.data.token);
-    localStorage.setItem("role", res.data.user.role);
+    localStorage.setItem("user", JSON.stringify(res.data.user));
+    console.log("LOGIN RESPONSE:", res.data);
 
     // ✅ use backend decision
     window.location.href = res.data.redirectTo;
