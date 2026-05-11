@@ -3,7 +3,7 @@ const NotificationService = require("../services/notification.service");
 class NotificationController {
   static async getNotifications(req, res) {
     try {
-      const userId = 1;
+      const userId = req.user.id;
 
       const notifications =
         await NotificationService.getUserNotifications(userId);
@@ -17,7 +17,7 @@ class NotificationController {
 
   static async markAsRead(req, res) {
     try {
-      const userId = 1;
+      const userId = req.user.id;
       const notificationId = req.params.id;
 
       await NotificationService.markAsRead(notificationId, userId);
@@ -31,7 +31,7 @@ class NotificationController {
 
   static async markAllAsRead(req, res) {
     try {
-      const userId = 1;
+      const userId = req.user.id;
 
       await NotificationService.markAllAsRead(userId);
 
