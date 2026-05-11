@@ -189,7 +189,7 @@ export default function SignupPage() {
           {/* LOGIN */}
           <p className="text-center text-sm text-gray-500 mt-4">
             Already have an account?{" "}
-            <a href="/login" className="text-[#c06080] font-bold">
+            <a href="/" className="text-[#c06080] font-bold">
               Login!
             </a>
           </p>
