@@ -10,6 +10,7 @@ const app = express();
 const abuseRoutes = require("./routes/abuse.routes");
 const notificationRoutes = require("./routes/notification.route");
 const milestoneRoutes = require("./routes/milestone.route");
+const profileRoutes = require("./routes/profile.route");
 
 app.use(cors());
 app.use(express.json());
@@ -28,6 +29,7 @@ app.use("/api/milestones", milestoneRoutes);
 
 app.use("/api/abuse", abuseRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api", profileRoutes);
 
 app.listen(5000, () => {
   console.log("Server running on port 5000");
