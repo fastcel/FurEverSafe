@@ -1,29 +1,85 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 
-export default function UserProfile() {
+// ─── role-specific field configs ───────────────────────────────────────────
+const PROFILE_FIELDS = {
+  user: [
+    { label: "Name", key: "name" },
+    { label: "Email", key: "email" },
+    { label: "Phone number", key: "phone" },
+  ],
+  ngo: [
+    { label: "Organisation Name", key: "name" },
+    { label: "Email", key: "email" },
+    { label: "Phone number", key: "phone" },
+    { label: "Registration No.", key: "registrationNo" },
+    { label: "Website", key: "website" },
+  ],
+};
+
+export default function UserProfile({ role = "user" }) {
   const navigate = useNavigate();
 
-  const [showSuccess, setShowSuccess] = useState(false);
+  const profileFields = PROFILE_FIELDS[role];
 
-  const [showPassword, setShowPassword] = useState({
-    old: false,
-    new: false,
-    confirm: false,
+  // ─── state for API data ────────────────────────────────────────────────
+  const [profileData, setProfileData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    registrationNo: "",
+    website: "",
   });
 
-  const [passwords, setPasswords] = useState({
-    old: "",
-    new: "",
-    confirm: "",
-  });
+  const [loading, setLoading] = useState(true);
 
-  const toggle = (field) =>
-    setShowPassword((prev) => ({
-      ...prev,
-      [field]: !prev[field],
-    }));
+  // ─── fetch profile from backend ────────────────────────────────────────
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const res = await fetch("http://localhost:5000/api/profile", {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || "Failed to load profile");
+
+        // map backend → frontend format
+        setProfileData({
+          name: data.name,
+          email: data.email,
+          phone: data.contact_number,
+          registrationNo: data.registrationNo,
+          website: data.website,
+        });
+
+        setLoading(false);
+      } catch (err) {
+        console.error("PROFILE FETCH ERROR:", err.message);
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="w-full min-h-screen bg-[#f0ebe0] flex items-center justify-center">
+          <p className="text-[#3a3028] font-bold">Loading profile...</p>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -37,36 +93,23 @@ export default function UserProfile() {
         {/* Profile Info Card */}
         <div className="w-full bg-[#e0d9cc] rounded-2xl p-8 mb-8 flex items-center gap-10 shadow-sm">
 
-          {/* Avatar */}
-          <div className="w-32 h-32 rounded-full bg-[#b8ae9e] flex items-center justify-center text-6xl shrink-0">
-            👤
-          </div>
-
-          {/* User Info */}
+          {/* Dynamic Fields */}
           <div className="flex-1 grid grid-cols-[180px_1fr] gap-x-8 gap-y-5 text-base text-[#3a3028]">
+            {profileFields.map(({ label, key }) => (
+              <>
+                <span key={`label-${key}`} className="font-bold self-center">
+                  {label}:
+                </span>
+                <span key={`value-${key}`} className="w-full bg-white rounded-lg px-4 py-3 border border-[#c8b89a]">
+                  {profileData[key] ?? "—"}
+                </span>
+              </>
+            ))}
 
-            <span className="font-bold self-center">
-              Name:
-            </span>
-
-            <span className="w-full bg-white rounded-lg px-4 py-3 border border-[#c8b89a]">
-              testUser23
-            </span>
-
-            <span className="font-bold self-center">
-              Email:
-            </span>
-
-            <span className="w-full bg-white rounded-lg px-4 py-3 border border-[#c8b89a]">
-              thatuser@gmail.com
-            </span>
-
-            <span className="font-bold self-center">
-              Phone number:
-            </span>
-
-            <span className="w-full bg-white rounded-lg px-4 py-3 border border-[#c8b89a]">
-              +923326894921
+            {/* Password row — always shown as dots */}
+            <span className="font-bold self-center">Password:</span>
+            <span className="w-full bg-white rounded-lg px-4 py-3 border border-[#c8b89a] tracking-widest text-xl">
+              ••••••••
             </span>
           </div>
 
@@ -79,77 +122,13 @@ export default function UserProfile() {
           </button>
         </div>
 
-        {/* Change Password Card */}
-        <div className="w-full bg-[#e0d9cc] rounded-2xl p-8 mb-8 shadow-sm">
-
-          <h2 className="text-center text-3xl font-bold text-[#3a3028] mb-8">
-            Change Password
-          </h2>
-
-          <div className="space-y-5">
-
-            {[
-              { label: "Old Password", key: "old" },
-              { label: "New Password", key: "new" },
-              { label: "Re-type New Password", key: "confirm" },
-            ].map(({ label, key }) => (
-              <div key={key} className="flex items-center gap-6">
-
-                <label className="text-lg font-semibold text-[#3a3028] w-64 text-right shrink-0">
-                  {label}
-                </label>
-
-                <div className="flex-1 flex items-center bg-white border border-[#c8b89a] rounded-lg overflow-hidden">
-
-                  <input
-                    type={showPassword[key] ? "text" : "password"}
-                    value={passwords[key]}
-                    onChange={(e) =>
-                      setPasswords((p) => ({
-                        ...p,
-                        [key]: e.target.value,
-                      }))
-                    }
-                    className="flex-1 px-5 py-4 text-base bg-transparent outline-none"
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() => toggle(key)}
-                    className="px-5 text-[#7a6a5a] hover:text-[#3a3028] text-xl"
-                  >
-                    {showPassword[key] ? "🙈" : "👁️"}
-                  </button>
-                </div>
-              </div>
-            ))}
-
-            {/* Forgot Password */}
-            <div className="flex justify-end">
-              <span
-                className="text-sm text-[#d63384] cursor-pointer underline"
-                onClick={() => navigate("/forgot-password")}
-              >
-                Forgot password?
-              </span>
-            </div>
-
-            {/* Submit */}
-            <button
-              onClick={() => setShowSuccess(true)}
-              className="w-full bg-[#d63384] hover:bg-[#b02770] text-white font-bold py-4 rounded-lg text-xl transition"
-            >
-              Submit
-            </button>
-          </div>
-        </div>
-
         {/* Help Button */}
-            <button
-              onClick={() => navigate("/help-and-support")}
-              className="w-full bg-[#d63384] hover:bg-[#b02770] text-white font-bold py-4 rounded-lg mb-4 text-xl transition">
-               Help and Support
-            </button>
+        <button
+          onClick={() => navigate("/help-and-support")}
+          className="w-full bg-[#d63384] hover:bg-[#b02770] text-white font-bold py-4 rounded-lg mb-4 text-xl transition"
+        >
+          Help and Support
+        </button>
 
         {/* Delete Account */}
         <button
@@ -159,30 +138,6 @@ export default function UserProfile() {
           Delete Account
         </button>
       </div>
-
-      {/* Success Modal */}
-      {showSuccess && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-
-          <div className="bg-white rounded-2xl shadow-2xl p-10 flex flex-col items-center gap-5 w-80">
-
-            <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center text-5xl">
-              ✅
-            </div>
-
-            <p className="text-[#3a3028] font-bold text-lg text-center">
-              Changes saved successfully!
-            </p>
-
-            <button
-              onClick={() => setShowSuccess(false)}
-              className="bg-[#d63384] hover:bg-[#b02770] text-white font-bold px-12 py-3 rounded-lg transition"
-            >
-              Return
-            </button>
-          </div>
-        </div>
-      )}
     </Layout>
   );
 }

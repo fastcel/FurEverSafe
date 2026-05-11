@@ -10,6 +10,7 @@ export default function LoginPage() {
   });
 
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -27,8 +28,12 @@ export default function LoginPage() {
     return Object.keys(newErrors).length === 0;
   };
 
- const handleSubmit = async () => {
+ 
+
+  const handleSubmit = async () => {
   if (!validate()) return;
+
+  setLoading(true);
 
   try {
     const res = await axios.post("http://localhost:5000/api/auth/login", {
@@ -36,10 +41,11 @@ export default function LoginPage() {
       password: form.password,
     });
 
-    // ✅ store token (basic auth)
     localStorage.setItem("token", res.data.token);
+    localStorage.setItem("role", res.data.user.role);
 
-    window.location.href = "/citizen-dashboard";
+    // ✅ use backend decision
+    window.location.href = res.data.redirectTo;
 
   } catch (err) {
     const message =
@@ -48,6 +54,9 @@ export default function LoginPage() {
       "Login failed";
 
     setErrors({ general: message });
+
+  } finally {
+    setLoading(false);
   }
 };
 
@@ -111,11 +120,13 @@ export default function LoginPage() {
 
         {/* Login Button */}
         <button
-          onClick={handleSubmit}
-          className="w-full bg-[#d94f8a] hover:bg-[#c43f7a] text-white font-bold py-2.5 rounded-xl text-sm"
-        >
-          Login
-        </button>
+        onClick={handleSubmit}
+        disabled={loading}
+        className={`w-full font-bold py-2.5 rounded-xl text-sm text-white transition
+          ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-[#d94f8a] hover:bg-[#c43f7a]"}`}
+      >
+        {loading ? "Logging in..." : "Login"}
+      </button>
 
         {/* Anonymous Report */}
         <div className="mt-3">
