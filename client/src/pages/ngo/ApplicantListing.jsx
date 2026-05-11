@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Layout from '../../components/layout';
+import Layout from '../../components/Layout';
 import ConfirmationModal from '../../components/ConfirmationModal';
 
 export default function ApplicantListing({ pet, onBack }) {

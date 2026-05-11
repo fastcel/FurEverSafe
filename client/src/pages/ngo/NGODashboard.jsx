@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Layout from '../../components/layout';
+import Layout from '../../components/Layout';
 import PetCard from '../../components/PetCard';
 import PetFormModal from '../../components/PetFormModal';
 import SortDropdown from '../../components/SortDropdown';
