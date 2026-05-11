@@ -35,14 +35,32 @@ router.get(
   abuseController.getReportDetails
 );
 
-/* =========================
-   UPDATE REPORT STATUS
-========================= */
-router.patch(
-  "/:id/status",
+router.get(
+  "/ngo",
   authenticate,
   authorizeRoles("ngo"),
-  abuseController.updateStatus
+  abuseController.getNgoReports
+);
+
+router.get(
+  "/ngo/:id",
+  authenticate,
+  authorizeRoles("ngo"),
+  abuseController.getReportById
+);
+
+router.patch(
+  "/ngo/:id/accept",
+  authenticate,
+  authorizeRoles("ngo"),
+  abuseController.acceptCase
+);
+
+router.patch(
+  "/ngo/:id/dismiss",
+  authenticate,
+  authorizeRoles("ngo"),
+  abuseController.dismissCase
 );
 
 module.exports = router;

@@ -18,21 +18,27 @@ const submitApplication = async (req, res) => {
   }
 };
 
-
 const getUserApplications = async (req, res) => {
   try {
-    const { user_id, tab } = req.query;
+    const userId = req.user.id;
+    const { tab } = req.query;
 
-    if (!user_id) {
-      return res.status(400).json({ error: "user_id required" });
-    }
+    const data = await adoptionService.getUserApplications(
+      userId,
+      tab
+    );
 
-    const data = await adoptionService.getUserApplications(user_id, tab);
+    return res.status(200).json({
+      message: "Applications fetched successfully",
+      applications: data,
+    });
 
-    res.json(data);
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Failed to fetch applications" });
+    console.log("🔥 USER APPLICATIONS ERROR:", err.message);
+
+    return res.status(500).json({
+      error: "Failed to fetch applications",
+    });
   }
 };
 

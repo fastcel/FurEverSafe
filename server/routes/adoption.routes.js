@@ -6,8 +6,8 @@ const {
 } = require("../middlewares/auth.middleware");
 const adoptionController = require("../controllers/adoption.controller");
 
-router.post("/apply", adoptionController.submitApplication);
-router.get("/my-applications", adoptionController.getUserApplications);
+router.post("/apply", authenticate, adoptionController.submitApplication);
+router.get("/my-applications", authenticate, adoptionController.getUserApplications);
 router.get(
   "/ngo/pets",
   authenticate,

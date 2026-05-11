@@ -25,33 +25,6 @@ const submitReport = async (req, res) => {
 };
 
 /* =========================
-   UPDATE STATUS
-========================= */
-const updateStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    const result = await abuseService.updateReportStatus(
-      id,
-      status
-    );
-
-    res.json({
-      message: "Status updated",
-      data: result
-    });
-
-  } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      error: "Failed to update report status"
-    });
-  }
-};
-
-/* =========================
    GET MY REPORTS
 ========================= */
 const getMyReports = async (req, res) => {
@@ -91,9 +64,100 @@ const getReportDetails = async (req, res) => {
   }
 };
 
+const getNgoReports = async (req, res) => {
+  try {
+    const reports = await abuseService.getNgoReports(
+      req.query.tab
+    );
+
+    return res.status(200).json({
+      message: "Reports fetched successfully",
+      reports,
+    });
+
+  } catch (err) {
+    console.log("🔥 NGO REPORTS ERROR:", err.message);
+
+    return res.status(500).json({
+      error: "Failed to fetch reports",
+    });
+  }
+};
+
+const getReportById = async (req, res) => {
+  try {
+    const report = await abuseService.getReportByIdNgo(
+      req.params.id
+    );
+
+    return res.status(200).json({
+      message: "Report fetched successfully",
+      report,
+    });
+
+  } catch (err) {
+    console.log("🔥 REPORT DETAILS ERROR:", err.message);
+
+    return res.status(500).json({
+      error: err.message || "Failed to fetch report",
+    });
+  }
+};
+
+/* =========================
+   ACCEPT CASE
+========================= */
+const acceptCase = async (req, res) => {
+  try {
+    const result = await abuseService.acceptCase(
+      req.params.id,
+      req.user.id
+    );
+
+    return res.status(200).json({
+      message: "Case marked as action taken",
+      report: result,
+    });
+
+  } catch (err) {
+    console.log("🔥 ACCEPT CASE ERROR:", err.message);
+
+    return res.status(500).json({
+      error: err.message || "Failed to accept case",
+    });
+  }
+};
+
+/* =========================
+   DISMISS CASE
+========================= */
+const dismissCase = async (req, res) => {
+  try {
+    const result = await abuseService.dismissCase(
+      req.params.id,
+      req.user.id
+    );
+
+    return res.status(200).json({
+      message: "Case dismissed successfully",
+      report: result,
+    });
+
+  } catch (err) {
+    console.log("🔥 DISMISS CASE ERROR:", err.message);
+
+    return res.status(500).json({
+      error: err.message || "Failed to dismiss case",
+    });
+  }
+};
+
 module.exports = {
   submitReport,
-  updateStatus,
   getMyReports,
-  getReportDetails
+  getReportDetails,
+  getNgoReports,
+  getReportById,
+  acceptCase,
+  dismissCase,
 };
