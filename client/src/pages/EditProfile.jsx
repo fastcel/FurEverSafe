@@ -47,39 +47,37 @@ export default function EditProfile({ role = "user", initialData }) {
   // ─────────────────────────────────────────────
   // FETCH PROFILE FROM BACKEND
   // ─────────────────────────────────────────────
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const token = localStorage.getItem("token");
+ useEffect(() => {
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
 
-        fetch("http://localhost:5000/api/profile", {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(form),
-        });
+      const res = await fetch("http://localhost:5000/api/edit-profile", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-        const data = await res.json();
+      const data = await res.json();
 
-        if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error);
 
-        setForm((prev) => ({
-          ...prev,
-          name: data.name || "",
-          email: data.email || "",
-          phone: data.contact_number || "",
-          registrationNo: data.registrationNo || "",
-          website: data.website || "",
-        }));
-      } catch (err) {
-        console.error("FETCH PROFILE ERROR:", err.message);
-      }
-    };
+      setForm((prev) => ({
+        ...prev,
+        name: data.name || "",
+        email: data.email || "",
+        phone: data.contact_number || "",
+        registrationNo: data.registrationNo || "",
+        website: data.website || "",
+      }));
+    } catch (err) {
+      console.error("FETCH PROFILE ERROR:", err.message);
+    }
+  };
 
-    fetchProfile();
-  }, []);
+  fetchProfile();
+}, []);
 
   // ─────────────────────────────────────────────
   // SAVE PROFILE (PUT API)
