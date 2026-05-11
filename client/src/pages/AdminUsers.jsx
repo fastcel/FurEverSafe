@@ -1,15 +1,10 @@
 import { useState, useEffect } from "react";
-<<<<<<< HEAD
 import Layout from "../components/Layout";
 import {
   fetchAllUsers,
   updateUser,
   deleteUser,
 } from "../services/adminService";
-=======
-import Layout from "../components/NGOLayout";
-import { fetchAllUsers, updateUser, deleteUser } from "../services/adminService";
->>>>>>> f34d53f (chore: resolve conflicts)
 
 // Map DB role values → display labels (and back)
 const ROLE_DISPLAY = {
@@ -32,7 +27,6 @@ export default function AdminUsers() {
   const [editUser, setEditUser] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [saving, setSaving] = useState(false);
-<<<<<<< HEAD
   const [modal, setModal] = useState({
     open: false,
     type: "", // "success" | "error"
@@ -45,9 +39,6 @@ export default function AdminUsers() {
       message,
     });
   };
-=======
-  const [showSuccess, setShowSuccess] = useState(false);
->>>>>>> f34d53f (chore: resolve conflicts)
 
   // Delete modal state
   const [userToDelete, setUserToDelete] = useState(null);

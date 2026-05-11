@@ -477,6 +477,18 @@ const updatePetPatch = async (userId, petId, data) => {
 
     const updatedPet = result.rows[0];
 
+    if (Array.isArray(data.images) && data.images.length > 0) {
+      await client.query(`DELETE FROM pet_images WHERE pet_id = $1`, [petId]);
+      for (const img of data.images) {
+        if (typeof img === "string" && img.trim()) {
+          await client.query(
+            `INSERT INTO pet_images (pet_id, image_url) VALUES ($1, $2)`,
+            [petId, img.trim()]
+          );
+        }
+      }
+    }
+
     // 5. Audit log
     await auditService.createAuditLog({
       admin_id: userId,

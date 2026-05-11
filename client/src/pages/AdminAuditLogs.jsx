@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 import { useState, useEffect } from "react";
 import Layout from "../components/Layout";
-=======
-import { useNavigate } from "react-router-dom";
-import Layout from "../components/layout";
->>>>>>> f34d53f (chore: resolve conflicts)
 
 const BASE_URL = "http://localhost:5000/api/admin";
 

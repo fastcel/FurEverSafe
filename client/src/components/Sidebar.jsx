@@ -34,9 +34,27 @@ export default function Sidebar() {
     ngo: [
       { name: "Home", path: "/ngo-dashboard" },
       { name: "Adoption Requests", path: "/ngo-adoptions" },
-      { name: "Abuse Reports", path: "/ngo-abuse-reports" },
-      { name: "Notifications", path: "/ngo-notifications" },
-      { name: "Profile", path: "/profile" },
+      {
+        name: "Abuse Reports",
+        path: "/ngo-abuse-reports",
+        isActive: (p) => p === "/ngo-abuse-reports" || p.startsWith("/ngo-abuse-reports/"),
+      },
+      {
+        name: "Notifications",
+        path: "/ngo-notifications",
+        isActive: (p) => p === "/ngo-notifications" || p.startsWith("/ngo-notifications/"),
+      },
+      {
+        name: "Profile",
+        path: "/profile",
+        isActive: (p) =>
+          p === "/profile" ||
+          p === "/ngo-profile" ||
+          p === "/edit-profile" ||
+          p === "/ngo-edit-profile" ||
+          p === "/delete-account" ||
+          p === "/ngo-delete-account",
+      },
     ],
 
     admin: [
@@ -58,7 +76,8 @@ export default function Sidebar() {
       {/* NAV */}
       <nav className="flex-1 flex flex-col mt-2">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const pathname = location.pathname;
+          const isActive = item.isActive ? item.isActive(pathname) : pathname === item.path;
 
           return (
             <button
@@ -76,18 +95,21 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* BOTTOM (ONLY FOR NON-ADMIN) */}
+      {/* BOTTOM (ONLY FOR NON-ADMIN; no gamification for NGO accounts) */}
       {role !== "admin" && (
         <div className="bg-secondary flex flex-col items-center text-center">
+          {role !== "ngo" && (
+            <>
+              <div className="flex flex-col items-center mb-3 text-base font-bold text-[#3a3028]">
+                <span className="text-3xl">🏅</span>
+                <span className="text-xl">190 pts</span>
+              </div>
 
-          <div className="flex flex-col items-center mb-3 text-base font-bold text-[#3a3028]">
-            <span className="text-3xl">🏅</span>
-            <span className="text-xl">190 pts</span>
-          </div>
-
-          <div className="w-full h-2.5 bg-[#d9d2c5] rounded-full overflow-hidden mb-3">
-            <div className="h-full w-[62%] bg-success rounded-full" />
-          </div>
+              <div className="w-full h-2.5 bg-[#d9d2c5] rounded-full overflow-hidden mb-3">
+                <div className="h-full w-[62%] bg-success rounded-full" />
+              </div>
+            </>
+          )}
 
           <button
             onClick={handleLogout}

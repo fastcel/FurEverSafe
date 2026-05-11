@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import axios from "axios";
-import Layout from "../components/layout";
+import Layout from "../components/Layout";
 import EditIcon from "@mui/icons-material/Edit";
 import UploadIcon from "@mui/icons-material/Upload";
 import CloseIcon from "@mui/icons-material/Close";

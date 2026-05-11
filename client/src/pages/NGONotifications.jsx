@@ -1,152 +1,110 @@
-<<<<<<< HEAD
-import { useState } from "react";
-import Layout from "../components/Layout";  
-=======
 import { useState, useEffect } from "react";
 import axios from "axios";
-import NGOSidebar from "../components/NGOSidebar";
->>>>>>> f34d53f (chore: resolve conflicts)
+import Layout from "../components/Layout";
 import {
-    NotificationsNone as BellIcon,
-    WarningAmber as WarningIcon,
+  NotificationsNone as BellIcon,
+  WarningAmber as WarningIcon,
 } from "@mui/icons-material";
 
 export default function NGONotifications() {
-    const [notifications, setNotifications] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const token = localStorage.getItem("token");
 
-<<<<<<< HEAD
-  return (
-    <Layout>
-    <div className="flex min-h-screen bg-[#f6f1e8]">
-      {/* Sidebar */}
-  
-=======
-    const token = localStorage.getItem("token");
->>>>>>> f34d53f (chore: resolve conflicts)
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get("http://localhost:5000/api/notifications", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-    // Fetch notifications from database on mount
-    useEffect(() => {
-        const fetchNotifications = async () => {
-            try {
-                setLoading(true);
-                const res = await axios.get(
-                    "http://localhost:5000/api/notifications",
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                );
+        console.log("NOTIFICATIONS:", res.data);
 
-                console.log("NOTIFICATIONS:", res.data);
-
-                setNotifications(res.data || []);
-            } catch (err) {
-                console.error("Failed to fetch notifications:", err);
-                setError(
-                    err.response?.data?.message ||
-                    "Failed to load notifications"
-                );
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchNotifications();
-    }, [token]);
-
-
-
-
-
-    const showAlert = (message) => {
-        alert(message);
+        setNotifications(res.data || []);
+      } catch (err) {
+        console.error("Failed to fetch notifications:", err);
+        setError(
+          err.response?.data?.message || "Failed to load notifications"
+        );
+      } finally {
+        setLoading(false);
+      }
     };
 
-    return (
-        <div className="flex min-h-screen bg-[#f6f1e8]">
-            {/* Sidebar */}
-            <NGOSidebar />
+    fetchNotifications();
+  }, [token]);
 
-            {/* Main Content */}
-            <div className="flex-1 p-10">
-                <div className="max-w-[1440px] mx-auto">
-                    {/* Header */}
-                    <h1 className="text-5xl font-black text-purple-900 mb-8">
-                        Notifications
-                    </h1>
+  const showAlert = (message) => {
+    alert(message);
+  };
 
-                    {/* Loading State */}
-                    {loading && (
-                        <div className="bg-[#bfb5a5] p-8 rounded-xl border-[3px] border-black shadow-sm w-full text-center">
-                            <p className="text-[#4a3f35] font-bold text-xl">
-                                Loading notifications...
-                            </p>
-                        </div>
-                    )}
+  return (
+    <Layout>
+      <div className="w-full min-h-screen bg-[#f6f1e8] p-10">
+        <div className="max-w-[1440px] mx-auto">
+          <h1 className="text-5xl font-black text-purple-900 mb-8">
+            Notifications
+          </h1>
 
-                    {/* Error State */}
-                    {!loading && error && (
-                        <div className="bg-red-100 p-8 rounded-xl border-[3px] border-black shadow-sm w-full text-center">
-                            <p className="text-red-700 font-bold text-xl">
-                                {error}
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Empty State */}
-                    {!loading && !error && notifications.length === 0 && (
-                        <div className="bg-[#bfb5a5] p-8 rounded-xl border-[3px] border-black shadow-sm w-full text-center">
-                            <BellIcon className="text-[#4a3f35] mb-4" style={{ fontSize: 48 }} />
-                            <p className="text-[#4a3f35] font-bold text-xl">
-                                No notifications yet.
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Notifications List */}
-                    {!loading && !error && notifications.length > 0 && (
-                        <div className="bg-[#bfb5a5] p-8 rounded-xl border-[3px] border-black shadow-sm w-full">
-                            <div className="space-y-4">
-                                {notifications.map((notif) => (
-                                    <div
-                                        key={notif.notification_id}
-                                        onClick={() =>
-                                            showAlert(
-                                                `Opening details for: ${notif.message}`
-                                            )
-                                        }
-                                        className="bg-white p-5 rounded-lg flex items-center border-[3px] border-black shadow-sm cursor-pointer hover:bg-gray-50 transition-all"
-                                    >
-                                        {/* Icon */}
-                                        <div className="mr-5">
-                                            {notif.type === "error" ? (
-                                                <WarningIcon className="text-red-500 scale-125" />
-                                            ) : (
-                                                <BellIcon className="text-yellow-500 scale-125" />
-                                            )}
-                                        </div>
-
-                                        {/* Text */}
-                                        <p className="text-[#4a3f35] font-bold text-xl">
-                                            {notif.message}
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
+          {loading && (
+            <div className="bg-[#bfb5a5] p-8 rounded-xl border-[3px] border-black shadow-sm w-full text-center">
+              <p className="text-[#4a3f35] font-bold text-xl">
+                Loading notifications...
+              </p>
             </div>
+          )}
+
+          {!loading && error && (
+            <div className="bg-red-100 p-8 rounded-xl border-[3px] border-black shadow-sm w-full text-center">
+              <p className="text-red-700 font-bold text-xl">{error}</p>
+            </div>
+          )}
+
+          {!loading && !error && notifications.length === 0 && (
+            <div className="bg-[#bfb5a5] p-8 rounded-xl border-[3px] border-black shadow-sm w-full text-center">
+              <BellIcon
+                className="text-[#4a3f35] mb-4"
+                style={{ fontSize: 48 }}
+              />
+              <p className="text-[#4a3f35] font-bold text-xl">
+                No notifications yet.
+              </p>
+            </div>
+          )}
+
+          {!loading && !error && notifications.length > 0 && (
+            <div className="bg-[#bfb5a5] p-8 rounded-xl border-[3px] border-black shadow-sm w-full">
+              <div className="space-y-4">
+                {notifications.map((notif) => (
+                  <div
+                    key={notif.notification_id}
+                    onClick={() =>
+                      showAlert(`Opening details for: ${notif.message}`)
+                    }
+                    className="bg-white p-5 rounded-lg flex items-center border-[3px] border-black shadow-sm cursor-pointer hover:bg-gray-50 transition-all"
+                  >
+                    <div className="mr-5">
+                      {notif.type === "error" ? (
+                        <WarningIcon className="text-red-500 scale-125" />
+                      ) : (
+                        <BellIcon className="text-yellow-500 scale-125" />
+                      )}
+                    </div>
+
+                    <p className="text-[#4a3f35] font-bold text-xl">
+                      {notif.message}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-<<<<<<< HEAD
       </div>
-    </div>
     </Layout>
   );
-=======
-    );
->>>>>>> f34d53f (chore: resolve conflicts)
 }
