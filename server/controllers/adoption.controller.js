@@ -19,25 +19,6 @@ const submitApplication = async (req, res) => {
 };
 
 
-const updateStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    const result = await adoptionService.updateAdoptionStatus(id, status);
-
-    res.json({
-      message: "Status updated",
-      data: result
-    });
-
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Failed to update status" });
-  }
-};
-
-
 const getUserApplications = async (req, res) => {
   try {
     const { user_id, tab } = req.query;
@@ -55,8 +36,143 @@ const getUserApplications = async (req, res) => {
   }
 };
 
+/* ======================================================
+   NGO - GET PETS WITH APPLICATION COUNTS
+====================================================== */
+const getNgoPetsWithApplications = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const data = await adoptionService.getNgoPetsWithApplications(userId);
+
+    return res.status(200).json({
+      message: "NGO pets fetched successfully",
+      pets: data,
+    });
+
+  } catch (err) {
+    console.log("🔥 NGO PET APPLICATIONS ERROR:", err.message);
+
+    return res.status(500).json({
+      error: err.message || "Failed to fetch pets",
+    });
+  }
+};
+
+/* ======================================================
+   NGO - GET APPLICATIONS FOR ONE PET
+====================================================== */
+const getApplicationsForPet = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const petId = req.params.petId;
+
+    const data = await adoptionService.getApplicationsForPet(
+      userId,
+      petId
+    );
+
+    return res.status(200).json({
+      message: "Applications fetched successfully",
+      applications: data,
+    });
+
+  } catch (err) {
+    console.log("🔥 PET APPLICATION LIST ERROR:", err.message);
+
+    return res.status(500).json({
+      error: err.message || "Failed to fetch applications",
+    });
+  }
+};
+
+/* ======================================================
+   NGO - GET SINGLE APPLICATION DETAILS
+====================================================== */
+const getApplicationDetails = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const applicationId = req.params.applicationId;
+
+    const data = await adoptionService.getApplicationDetails(
+      userId,
+      applicationId
+    );
+
+    return res.status(200).json({
+      message: "Application details fetched successfully",
+      application: data,
+    });
+
+  } catch (err) {
+    console.log("🔥 APPLICATION DETAILS ERROR:", err.message);
+
+    return res.status(500).json({
+      error: err.message || "Failed to fetch application details",
+    });
+  }
+};
+
+/* ======================================================
+   NGO APPROVE APPLICATION
+====================================================== */
+const approveApplication = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const applicationId = req.params.id;
+
+    const result = await adoptionService.approveApplication(
+      userId,
+      applicationId
+    );
+
+    return res.status(200).json({
+      message: "Application approved successfully",
+      data: result,
+    });
+
+  } catch (err) {
+    console.log("🔥 APPROVE ERROR:", err.message);
+
+    return res.status(400).json({
+      error: err.message || "Failed to approve application",
+    });
+  }
+};
+
+/* ======================================================
+   NGO REJECT APPLICATION
+====================================================== */
+const rejectApplication = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const applicationId = req.params.id;
+
+    const result = await adoptionService.rejectApplication(
+      userId,
+      applicationId
+    );
+
+    return res.status(200).json({
+      message: "Application rejected successfully",
+      data: result,
+    });
+
+  } catch (err) {
+    console.log("🔥 REJECT ERROR:", err.message);
+
+    return res.status(400).json({
+      error: err.message || "Failed to reject application",
+    });
+  }
+};
+
 module.exports = {
   submitApplication,
-  updateStatus,
   getUserApplications,
+  getNgoPetsWithApplications,
+  getApplicationsForPet,
+  getApplicationDetails,
+  approveApplication,
+  rejectApplication,
 };
