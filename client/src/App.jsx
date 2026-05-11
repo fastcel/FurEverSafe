@@ -5,6 +5,8 @@ import Login from "./pages/Login";
 import CitizenDashboard from "./pages/Citizen/CitizenDashboard";
 import AdoptionForm from "./pages/Citizen/AdoptionForm";
 import AdoptionsPage from "./pages/Citizen/AdoptionsPage";
+import NGODashboard from "./pages/ngo/NGODashboard";
+import NGOAdoptions from "./pages/ngo/NGOAdoptions";
 
 export default function App() {
   return (
@@ -21,7 +23,15 @@ export default function App() {
           path="/citizen-dashboard"
           element={<CitizenDashboard />}
         />
+
+        {/* NGO Dashboard */}
+        <Route
+          path="/ngo-dashboard"
+          element={<NGODashboard />}
+        />
+        <Route path="/ngo-adoptions" element={<NGOAdoptions />} />
       </Routes>
+
     </BrowserRouter>
   );
 }
