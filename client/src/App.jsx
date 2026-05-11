@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
@@ -30,6 +30,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Default route → redirect to login */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+
         <Route path="/dashboard" element={<CitizenDashboard />} />
         <Route path="/adopt/:petName" element={<AdoptionForm />} />
         <Route path="/adoptions" element={<AdoptionsPage />} />
@@ -50,24 +53,20 @@ export default function App() {
         <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
         {/* Forgot Password Flow */}
         <Route path="/forgot-password" element={<ForgotPassword1 />} />
-        <Route
-          path="/forgot-password/email-sent"
-          element={<ForgotPassword2 />}
-        />
+        <Route path="/forgot-password/email-sent" element={<ForgotPassword2 />} />
         <Route path="/forgot-password/reset" element={<ForgotPassword3 />} />
         <Route path="/notifications" element={<UserNotifications />} />
         <Route path="/report-abuse" element={<ReportAbuse />} />
         {/* NGO Routes */}
         <Route path="/ngo-abuse-reports" element={<NGOAbuseReports />} />
-        <Route
-          path="/ngo-abuse-reports/:id"
-          element={<NGOAbuseReportDetails />}
-        />
-
+        <Route path="/ngo-abuse-reports/:id" element={<NGOAbuseReportDetails />} />
         {/* NGO Dashboard */}
         <Route path="/ngo-dashboard" element={<NGODashboard />} />
         <Route path="/ngo-adoptions" element={<NGOAdoptions />} />
         <Route path="/ngo-notifications/" element={<NGONotifications />} />
+
+        {/* Catch-all → redirect unknown routes to login */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );
