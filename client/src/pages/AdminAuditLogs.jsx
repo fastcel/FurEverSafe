@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import Layout from "../components/Layout";
+import Layout from "../components/layout";
 
 const logs = [
   { time: "2026-03-07 09:14:02", level: "INFO", message: "New account was created. (User ID: 10)" },

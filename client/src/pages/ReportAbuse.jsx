@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import Layout from "../components/Layout";
+import Layout from "../components/layout";
 import EditIcon from "@mui/icons-material/Edit";
 import UploadIcon from "@mui/icons-material/Upload";
 import CloseIcon from "@mui/icons-material/Close";

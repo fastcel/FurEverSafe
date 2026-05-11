@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Layout from "../components/Layout";
+import Layout from "../components/layout";
 
 const initialUsers = [
   { id: 1,  name: "AliAhmed1",    phone: "+923333482873", email: "aliahmed@gmail.com",    role: "Citizen",           password: "••••••••" },
