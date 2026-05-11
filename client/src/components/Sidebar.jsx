@@ -1,11 +1,15 @@
-import { useState } from "react";
+import { NavLink } from "react-router-dom";
 import logo from "../assets/logo.png";
 
-const navItems = ["Home", "Adoptions", "Report Abuse", "Notifications", "Profile"];
+const navItems = [
+  { name: "Home", path: "/citizen-dashboard" },
+  { name: "Adoptions", path: "/adoptions" },
+  { name: "Report Abuse", path: "/report-abuse" },
+  { name: "Notifications", path: "/notifications" },
+  { name: "Profile", path: "/profile" },
+];
 
 export default function Sidebar() {
-  const [active, setActive] = useState("Home");
-
   return (
     <div className="w-64 h-screen bg-secondary font-bold flex flex-col justify-between sticky top-0">
 
@@ -17,17 +21,17 @@ export default function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 flex font-bold flex-col mt-2">
         {navItems.map((item) => (
-          <button
-            key={item}
-            onClick={() => setActive(item)}
-            className={
-              active === item
+          <NavLink
+            key={item.name}
+            to={item.path}
+            className={({ isActive }) =>
+              isActive
                 ? "w-full py-3.5 text-center text-[20px] font-bold border-none cursor-pointer bg-primary text-white"
                 : "w-full py-3.5 text-center text-[20px] font-semibold border-none cursor-pointer bg-transparent text-[#4a3f35] hover:bg-[#b8ae9e]"
             }
           >
-            {item}
-          </button>
+            {item.name}
+          </NavLink>
         ))}
       </nav>
         {/* Bottom */}
