@@ -173,14 +173,14 @@ export default function UserNotifications() {
         <div
           key={report.id}
           onClick={() => setSelectedReport(report)}
-          className="bg-[#dcd3c1] p-6 rounded-xl flex items-center justify-between cursor-pointer border-[3px] border-black shadow-sm hover:bg-[#cec3ad] transition-all"
+          className="bg-[#dcd3c1] p-6 rounded-xl flex items-center justify-between cursor-pointer border-[3px] border-black shadow-sm w-full-sm hover:bg-[#cec3ad] transition-all"
         >
           <div>
             <h4 className="text-2xl font-black text-[#4a3f35]">{report.id} - {report.animal} abuse, {report.location}</h4>
             <p className="text-gray-700 font-bold text-lg">Submitted {report.date} - {report.severity} Severity</p>
           </div>
           <div className="flex items-center gap-6">
-            <span className={`px-6 py-2 rounded-lg font-black text-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
+            <span className={`px-6 py-2 rounded-lg font-black text-lg border-[3px] border-black shadow-sm w-full-sm'}
               ${report.status === 'Under Review' ? 'bg-[#f4e4bc]' :
                 report.status === 'Action Taken' ? 'bg-success text-white' :
                   report.status === 'In Progress' ? 'bg-[#bae1ff]' :
@@ -325,7 +325,7 @@ export default function UserNotifications() {
           ))}
         </div>
 
-        <h1 className="text-5xl font-black text-[#4a3f35] mb-4">{activeTab}</h1>
+        <h1 className="text-5xl font-black text-purple-900  mb-4">{activeTab}</h1>
 
         {activeTab === "Notifications" && renderNotifications()}
         {activeTab === "Milestones" && renderMilestones()}

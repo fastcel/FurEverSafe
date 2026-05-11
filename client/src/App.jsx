@@ -7,6 +7,7 @@ import CitizenDashboard from "./pages/CitizenDashboard";
 import ReportAbuse from "./pages/ReportAbuse";
 import NGOAbuseReports from "./pages/NGOAbuseReports";
 import NGOAbuseReportDetails from "./pages/NGOAbuseReportDetails";
+import NGONotifications from "./pages/NGONotifications";
 
 export default function App() {
   return (
@@ -37,6 +38,10 @@ export default function App() {
         <Route
           path="/ngo-abuse-reports/:id"
           element={<NGOAbuseReportDetails />}
+        />
+        <Route
+          path="/ngo-notifications/"
+          element={<NGONotifications />}
         />
       </Routes>
     </BrowserRouter>
