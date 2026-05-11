@@ -1,14 +1,16 @@
 const { pool } = require("../db");
+const { createNotification } = require("./notification.service");
 
+/* ======================================================
+   SUBMIT APPLICATION
+====================================================== */
 const submitApplication = async (data) => {
   const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
 
-    // =====================================================
-    // STEP 0: VALIDATE listing exists (IMPORTANT FIX)
-    // =====================================================
+    // STEP 0: validate listing
     const listingCheck = await client.query(
       `SELECT listing_id FROM adoption_listings WHERE listing_id = $1`,
       [data.listing_id]
@@ -18,9 +20,7 @@ const submitApplication = async (data) => {
       throw new Error("Invalid listing_id (does not exist)");
     }
 
-    // =====================================================
-    // STEP 1: Create application
-    // =====================================================
+    // STEP 1: create application
     const applicationResult = await client.query(
       `
       INSERT INTO adoption_applications
@@ -33,9 +33,7 @@ const submitApplication = async (data) => {
 
     const application = applicationResult.rows[0];
 
-    // =====================================================
-    // STEP 2: Create profile
-    // =====================================================
+    // STEP 2: create profile
     await client.query(
       `
       INSERT INTO adoption_application_profiles
@@ -74,6 +72,15 @@ const submitApplication = async (data) => {
 
     await client.query("COMMIT");
 
+    // 🔥 NOTIFICATION (AFTER COMMIT)
+    await createNotification({
+      user_id: data.user_id,
+      type: "adoption",
+      message: `Your adoption application has been submitted`,
+      source_type: "adoption_application",
+      source_id: application.application_id
+    });
+
     return application;
 
   } catch (err) {
@@ -85,6 +92,9 @@ const submitApplication = async (data) => {
   }
 };
 
+/* ======================================================
+   GET USER APPLICATIONS
+====================================================== */
 const getUserApplications = async (user_id, tab) => {
   let query = `
     SELECT 
@@ -113,13 +123,9 @@ const getUserApplications = async (user_id, tab) => {
 
   const values = [user_id];
 
-  // 🔵 ongoing tab
   if (tab === "ongoing") {
     query += ` AND a.status = 'pending'`;
-  }
-
-  // 🟡 previous tab
-  else if (tab === "previous") {
+  } else if (tab === "previous") {
     query += ` AND a.status IN ('approved', 'rejected', 'cancelled')`;
   }
 
@@ -129,8 +135,72 @@ const getUserApplications = async (user_id, tab) => {
   return result.rows;
 };
 
+/* ======================================================
+   UPDATE ADOPTION STATUS (NGO)
+====================================================== */
+const updateAdoptionStatus = async (application_id, status) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const result = await client.query(
+      `
+      UPDATE adoption_applications
+      SET status = $1
+      WHERE application_id = $2
+      RETURNING user_id, listing_id
+      `,
+      [status, application_id]
+    );
+
+    const data = result.rows[0];
+
+    const petResult = await client.query(
+      `
+      SELECT p.name
+      FROM adoption_listings l
+      JOIN pets p ON p.pet_id = l.pet_id
+      WHERE l.listing_id = $1
+      `,
+      [data.listing_id]
+    );
+
+    const petName = petResult.rows[0]?.name;
+
+    await client.query("COMMIT");
+
+    // 🔥 NOTIFICATION AFTER COMMIT
+    let message = "";
+
+    if (status === "approved") {
+      message = `🎉 Your adoption application for ${petName} has been approved`;
+    } else if (status === "rejected") {
+      message = `❌ Your adoption application for ${petName} has been rejected`;
+    } else if (status === "cancelled") {
+      message = `⚠️ Your adoption application for ${petName} was cancelled`;
+    }
+
+    await createNotification({
+      user_id: data.user_id,
+      type: "adoption",
+      message,
+      source_type: "adoption_application",
+      source_id: application_id
+    });
+
+    return result.rows[0];
+
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+};
 
 module.exports = {
   submitApplication,
   getUserApplications,
+  updateAdoptionStatus
 };

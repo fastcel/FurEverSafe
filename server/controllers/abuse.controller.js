@@ -21,6 +21,26 @@ const submitReport = async (req, res) => {
   }
 };
 
+
+const updateStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const result = await abuseService.updateReportStatus(id, status);
+
+    res.json({
+      message: "Status updated",
+      data: result
+    });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Failed to update report status" });
+  }
+};
+
 module.exports = {
-  submitReport
+  submitReport,
+  updateStatus
 };

@@ -6,6 +6,7 @@ const petRoutes = require("./routes/pet.routes");
 const adoptionRoutes = require("./routes/adoption.routes");
 const app = express();
 const abuseRoutes = require("./routes/abuse.routes");
+const notificationRoutes = require("./routes/notification.route");
 
 app.use(cors());
 app.use(express.json());
@@ -20,6 +21,7 @@ app.use(
 
 
 app.use("/api/abuse", abuseRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.listen(5000, () => {
   console.log("Server running on port 5000");
