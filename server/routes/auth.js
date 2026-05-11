@@ -146,11 +146,7 @@ router.post("/login", async (req, res) => {
       { expiresIn: "1d" }
     );
 
-    const redirectTo =
-      user.role === "ngo"
-        ? "/ngo-dashboard"
-        : "/citizen-dashboard";
-
+    
     await auditService.createAuditLog({
       admin_id: user.user_id,
       action: "LOGIN",
@@ -158,6 +154,15 @@ router.post("/login", async (req, res) => {
       target_id: user.user_id,
       description: `User logged in: ${user.email}`,
     });
+
+    let redirectTo;
+    if (user.role === "ngo") {
+      redirectTo = "/ngo-dashboard";
+    } else if (user.role === "admin") {
+      redirectTo = "/admin/users";
+    } else {
+      redirectTo = "/citizen-dashboard";
+    }
 
     return res.status(200).json({
       message: "Login successful",
