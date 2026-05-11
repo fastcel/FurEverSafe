@@ -1,5 +1,5 @@
 import { useState } from "react";
-import NGOSidebar from "../components/NGOSidebar";
+import Layout from "../components/Layout";  
 import {
   NotificationsNone as BellIcon,
   WarningAmber as WarningIcon,
@@ -21,9 +21,10 @@ export default function NGONotifications() {
   };
 
   return (
+    <Layout>
     <div className="flex min-h-screen bg-[#f6f1e8]">
       {/* Sidebar */}
-      <NGOSidebar />
+  
 
       {/* Main Content */}
       <div className="flex-1 p-10">
@@ -65,5 +66,6 @@ export default function NGONotifications() {
         </div>
       </div>
     </div>
+    </Layout>
   );
 }
