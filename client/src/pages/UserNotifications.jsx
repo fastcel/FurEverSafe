@@ -21,7 +21,7 @@ export default function UserNotifications() {
   const [loading, setLoading] = useState(true);
 
 
-useEffect(() => {
+  useEffect(() => {
     const fetchUserData = async () => {
       try {
         setLoading(true);
@@ -66,7 +66,7 @@ useEffect(() => {
     alert(message);
   };
 
- const renderNotifications = () => (
+  const renderNotifications = () => (
     <div className="bg-[#bfb5a5] p-8 rounded-xl border-[3px] border-black shadow-sm w-full mx-auto mt-6">
       <div className="space-y-4">
         {/* MODIFIED: Mapping real 'notifications' state instead of dummy data */}
@@ -98,7 +98,7 @@ useEffect(() => {
       {/* Stats Cards */}
       <div className="flex justify-between gap-6">
         {[
-          { label: "Total Points", value: 190 }, 
+          { label: "Total Points", value: 190 },
           { label: "Pets Adopted", value: 2 },
           { label: "Reports Submitted", value: reports.length } // Using real length
         ].map((stat) => (
@@ -200,10 +200,9 @@ useEffect(() => {
             </p>
           </div>
           <div className="flex items-center gap-6">
-            <span className={`px-6 py-2 rounded-lg font-black text-lg border-[3px] border-black shadow-sm ${
-              report.status === 'under_review' ? 'bg-[#f4e4bc]' :
-              report.status === 'action_taken' ? 'bg-success text-white' : 'bg-gray-200'
-            }`}>
+            <span className={`px-6 py-2 rounded-lg font-black text-lg border-[3px] border-black shadow-sm ${report.status === 'under_review' ? 'bg-[#f4e4bc]' :
+                report.status === 'action_taken' ? 'bg-success text-white' : 'bg-gray-200'
+              }`}>
               {report.status.replace('_', ' ').toUpperCase()}
             </span>
             <ChevronRightIcon className="text-[#4a3f35] scale-125" />
@@ -283,7 +282,7 @@ useEffect(() => {
                     {step.done ? (
                       <div className="bg-success text-white rounded-full p-1.5 border-[2px] border-black"><CheckCircleIcon /></div>
                     ) : (
-                      <div className="bg-gray-300 text-black rounded-full w-9 h-9 flex items-center justify-center font-black border-[2px] border-black">{step.step || idx+1}</div>
+                      <div className="bg-gray-300 text-black rounded-full w-9 h-9 flex items-center justify-center font-black border-[2px] border-black">{step.step || idx + 1}</div>
                     )}
                     <span className={`font-black text-xl ${step.done ? 'text-primary' : 'text-gray-400'}`}>{step.label}</span>
                   </div>
@@ -321,7 +320,7 @@ useEffect(() => {
         </div>
 
         {loading ? (
-           <h1 className="text-3xl font-black animate-pulse">Loading dashboard...</h1>
+          <h1 className="text-3xl font-black animate-pulse">Loading dashboard...</h1>
         ) : (
           <>
             <h1 className="text-5xl font-black text-purple-900 mb-4">{activeTab}</h1>
