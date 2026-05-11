@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate} from "react-router-dom";
 import logo from "../assets/logo.png";
 
 // Define paths for your items
@@ -13,6 +13,19 @@ const navItems = [
 
 export default function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+
+    const handleLogout = () => {
+      // remove auth data
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+
+      // optional: clear anything else
+      sessionStorage.clear();
+
+      // redirect to login
+      navigate("/login");
+    };
 
   return (
     <div className="w-64 min-h-screen bg-secondary font-bold flex flex-col justify-between">
@@ -58,9 +71,12 @@ export default function Sidebar() {
         </div>
 
         {/* Change this to a Link or keep as button for a logout function */}
-        <button className="w-full py-3.5 text-[20px] font-bold cursor-pointer bg-red-600 text-white hover:bg-red-700 transition rounded-none border-none">
-          Logout
-        </button>
+        <button
+        onClick={handleLogout}
+        className="w-full py-3.5 text-[20px] font-bold cursor-pointer bg-red-600 text-white hover:bg-red-700 transition rounded-none border-none"
+      >
+        Logout
+      </button>
       </div>
     </div>
   );
