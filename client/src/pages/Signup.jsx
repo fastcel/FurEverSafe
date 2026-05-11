@@ -7,7 +7,7 @@ export default function SignupPage() {
   const [role, setRole] = useState("citizen");
 
   const [form, setForm] = useState({
-    username: "",
+    name: "",
     email: "",
     contact: "",
     password: "",
@@ -25,7 +25,10 @@ export default function SignupPage() {
 
     try {
       const res = await axios.post("http://localhost:5000/api/auth/signup", {
-        ...form,
+        name: form.name,
+        email: form.email,
+        contact: form.contact,
+        password: form.password,
         role,
       });
 
@@ -38,7 +41,7 @@ export default function SignupPage() {
         setErrors({ email: message });
       } 
       else if (message === "Username already exists") {
-        setErrors({ username: message });
+        setErrors({ name: message });
       } 
       else if (message === "All fields are required") {
         setErrors({ general: message });
@@ -95,14 +98,14 @@ export default function SignupPage() {
               Username <span className="text-red-500">*</span>
             </label>
             <input
-              name="username"x
-              value={form.username}
+              name="name"
+              value={form.name}
               onChange={handleChange}
               placeholder="Enter your Username..."
               className="w-full bg-gray-100 text-black rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#e87aab]"
             />
-            {errors.username && (
-              <p className="text-red-500 text-xs mt-1">{errors.username}</p>
+            {errors.name && (
+              <p className="text-red-500 text-xs mt-1">{errors.name}</p>
             )}
           </div>
 
@@ -172,15 +175,15 @@ export default function SignupPage() {
               </button>
 
               <button
-                onClick={() => setRole("ngo_rep")}
-                className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition ${
-                  role === "ngo_rep"
-                    ? "bg-[#e87aab] text-white"
-                    : "bg-white text-gray-600 border-gray-300"
-                }`}
-              >
-                NGO Rep
-              </button>
+              onClick={() => setRole("ngo")}
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition ${
+                role === "ngo"
+                  ? "bg-[#e87aab] text-white"
+                  : "bg-white text-gray-600 border-gray-300"
+              }`}
+            >
+              NGO Rep
+            </button>
             </div>
           </div>
 
