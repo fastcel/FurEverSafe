@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import Layout from "../components/Layout";
+import Layout from "../components/layout";
 
 export default function HelpAndSupport() {
   const navigate = useNavigate();

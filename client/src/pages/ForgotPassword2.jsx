@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import Layout from "../components/Layout";
+import Layout from "../components/layout";
 
 export default function ForgotPassword2() {
   const navigate = useNavigate();

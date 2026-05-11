@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Layout from "../components/Layout";
+import Layout from "../components/layout";
 
 // ─── role-specific field configs ───────────────────────────────────────────
 const PROFILE_FIELDS = {
