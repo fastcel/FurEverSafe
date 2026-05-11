@@ -18,6 +18,26 @@ const submitApplication = async (req, res) => {
   }
 };
 
+
+const updateStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const result = await adoptionService.updateAdoptionStatus(id, status);
+
+    res.json({
+      message: "Status updated",
+      data: result
+    });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Failed to update status" });
+  }
+};
+
+
 const getUserApplications = async (req, res) => {
   try {
     const { user_id, tab } = req.query;
@@ -37,5 +57,6 @@ const getUserApplications = async (req, res) => {
 
 module.exports = {
   submitApplication,
+  updateStatus,
   getUserApplications,
 };
