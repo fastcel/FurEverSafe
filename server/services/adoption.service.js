@@ -93,7 +93,7 @@ const submitApplication = async (data, userId) => {
       type: "adoption",
       message: `Your adoption application has been submitted`,
       source_type: "adoption_application",
-      source_id: application.application_id
+      source_id: application.application_id});
 
     await auditService.createAuditLog({
       admin_id: userId,
