@@ -7,6 +7,7 @@ const { addReward } = require("./reward.service");
    SUBMIT APPLICATION
 ====================================================== */
 const auditService = require("./audit.service");
+const { rejectApplication } = require("../controllers/adoption.controller");
 
 const submitApplication = async (data, userId) => {
   const client = await pool.connect();
@@ -167,85 +168,258 @@ const getUserApplications = async (user_id, tab) => {
   return result.rows;
 };
 
-/* ======================================================
-   UPDATE ADOPTION STATUS (NGO)
-====================================================== */
+const getNgoPetsWithApplications = async (userId) => {
 
-const updateAdoptionStatus = async (application_id, status) => {
+  // 1. get ngo id
+  const ngoResult = await pool.query(
+    `SELECT ngo_id FROM ngos WHERE user_id = $1`,
+    [userId]
+  );
+
+  if (!ngoResult.rows.length) {
+    throw new Error("NGO not found");
+  }
+
+  const ngoId = ngoResult.rows[0].ngo_id;
+
+  // 2. fetch pets + counts
+  const result = await pool.query(
+    `
+    SELECT
+      p.pet_id,
+      p.name,
+      p.breed,
+      p.age,
+      p.city,
+
+      (
+        SELECT image_url
+        FROM pet_images pi
+        WHERE pi.pet_id = p.pet_id
+        LIMIT 1
+      ) AS image_url,
+
+      COUNT(a.application_id) AS total_applications
+
+    FROM pets p
+
+    JOIN adoption_listings l
+      ON l.pet_id = p.pet_id
+
+    LEFT JOIN adoption_applications a
+      ON a.listing_id = l.listing_id
+
+    WHERE p.ngo_id = $1
+
+    GROUP BY p.pet_id
+
+    HAVING COUNT(a.application_id) > 0
+
+    ORDER BY total_applications DESC
+    `,
+    [ngoId]
+  );
+
+  return result.rows;
+};
+
+const getApplicationsForPet = async (userId, petId) => {
+
+  const result = await pool.query(
+    `
+    SELECT
+      a.application_id,
+      a.status,
+      a.created_at,
+
+      u.user_id,
+      u.name AS applicant_name,
+      u.email,
+      u.contact_number
+
+    FROM adoption_applications a
+
+    JOIN users u
+      ON u.user_id = a.user_id
+
+    JOIN adoption_listings l
+      ON l.listing_id = a.listing_id
+
+    JOIN pets p
+      ON p.pet_id = l.pet_id
+
+    JOIN ngos n
+      ON n.ngo_id = p.ngo_id
+
+    WHERE p.pet_id = $1
+      AND n.user_id = $2
+
+    ORDER BY a.created_at DESC
+    `,
+    [petId, userId]
+  );
+
+  return result.rows;
+};
+
+const getApplicationDetails = async (userId, applicationId) => {
+
+  const result = await pool.query(
+    `
+    SELECT
+      a.application_id,
+      a.status,
+      a.created_at,
+
+      u.user_id,
+      u.name AS applicant_name,
+      u.email,
+      u.contact_number,
+
+      ap.full_name,
+      ap.preferred_contact_method,
+      ap.house_type,
+      ap.monthly_income_range,
+      ap.monthly_budget_range,
+      ap.pet_alone_hours,
+      ap.has_children,
+      ap.motivation,
+      ap.other_pets,
+
+      p.pet_id,
+      p.name AS pet_name,
+      p.breed,
+      p.city
+
+    FROM adoption_applications a
+
+    JOIN adoption_application_profiles ap
+      ON ap.application_id = a.application_id
+
+    JOIN users u
+      ON u.user_id = a.user_id
+
+    JOIN adoption_listings l
+      ON l.listing_id = a.listing_id
+
+    JOIN pets p
+      ON p.pet_id = l.pet_id
+
+    JOIN ngos n
+      ON n.ngo_id = p.ngo_id
+
+    WHERE a.application_id = $1
+      AND n.user_id = $2
+    `,
+    [applicationId, userId]
+  );
+
+  if (!result.rows.length) {
+    throw new Error("Application not found");
+  }
+
+  return result.rows[0];
+};
+
+const approveApplication = async (userId, applicationId) => {
   const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
 
     /* ======================================================
-       1. VALIDATE STATUS
+       1. VERIFY NGO OWNS THIS PET
     ====================================================== */
-    const allowedStatuses = ["approved", "rejected", "cancelled"];
 
-    if (!allowedStatuses.includes(status)) {
-      throw new Error("Invalid status value");
+    const applicationResult = await client.query(
+      `
+      SELECT
+        a.application_id,
+        a.user_id,
+        a.listing_id,
+        p.pet_id,
+        p.name AS pet_name,
+        n.ngo_id
+
+      FROM adoption_applications a
+
+      JOIN adoption_listings l
+        ON l.listing_id = a.listing_id
+
+      JOIN pets p
+        ON p.pet_id = l.pet_id
+
+      JOIN ngos n
+        ON n.ngo_id = p.ngo_id
+
+      WHERE a.application_id = $1
+        AND n.user_id = $2
+      `,
+      [applicationId, userId]
+    );
+
+    if (!applicationResult.rows.length) {
+      throw new Error("Application not found or unauthorized");
     }
 
+    const app = applicationResult.rows[0];
+
     /* ======================================================
-       2. UPDATE APPLICATION
+       2. APPROVE SELECTED APPLICATION
     ====================================================== */
-    const result = await client.query(
+
+    await client.query(
       `
       UPDATE adoption_applications
-      SET status = $1
-      WHERE application_id = $2
-      RETURNING user_id, listing_id
+      SET status = 'approved'
+      WHERE application_id = $1
       `,
-      [status, application_id]
+      [applicationId]
     );
 
-    if (!result.rows.length) {
-      throw new Error("Invalid application_id");
-    }
-
-    const data = result.rows[0];
-
     /* ======================================================
-       3. GET PET NAME
+       3. REJECT ALL OTHER APPLICATIONS
     ====================================================== */
-    const petResult = await client.query(
+
+    await client.query(
       `
-      SELECT p.name
-      FROM adoption_listings l
-      JOIN pets p ON p.pet_id = l.pet_id
-      WHERE l.listing_id = $1
+      UPDATE adoption_applications
+      SET status = 'rejected'
+      WHERE listing_id = $1
+        AND application_id != $2
       `,
-      [data.listing_id]
+      [app.listing_id, applicationId]
     );
 
-    if (!petResult.rows.length) {
-      throw new Error("Pet not found for listing");
-    }
-
-    const petName = petResult.rows[0].name;
-
     /* ======================================================
-       4. BUILD MESSAGE
+       4. MARK PET ADOPTED
     ====================================================== */
-    let message = "";
 
-    if (status === "approved") {
-      message = `🎉 Your adoption application for ${petName} has been approved`;
-    } else if (status === "rejected") {
-      message = `❌ Your adoption application for ${petName} has been rejected`;
-    } else if (status === "cancelled") {
-      message = `⚠️ Your adoption application for ${petName} was cancelled`;
-    }
+    await client.query(
+      `
+      UPDATE pets
+      SET status = 'adopted'
+      WHERE pet_id = $1
+      `,
+      [app.pet_id]
+    );
 
-    /* ======================================================
-       5. COMMIT DB CHANGES
-    ====================================================== */
     await client.query("COMMIT");
 
     /* ======================================================
-       6. SIDE EFFECTS (SAFE AFTER COMMIT)
+       5. REWARD
     ====================================================== */
-    
+
+    await addReward({
+      user_id: app.user_id,
+      points: 50,
+      source_type: "adoption",
+      source_id: applicationId
+    });
+
+    /* ======================================================
+       6. NOTIFICATIONS
+    ====================================================== */
     if (status === "approved") {
   await client.query(
     `
@@ -263,24 +437,30 @@ const updateAdoptionStatus = async (application_id, status) => {
     source_id: application_id
   });
 }
-
-
-    try {
-      await createNotification({
-        user_id: data.user_id,
-        type: "adoption",
-        message,
-        source_type: "adoption_application",
-        source_id: application_id
-      });
-    } catch (err) {
-      console.log("🔥 Notification failed (non-blocking):", err.message);
-    }
+    await createNotification({
+      user_id: app.user_id,
+      type: "adoption",
+      message: `🎉 Your application for ${app.pet_name} was approved`,
+      source_type: "adoption_application",
+      source_id: applicationId
+    });
 
     /* ======================================================
-       7. RETURN RESULT
+       7. AUDIT LOG
     ====================================================== */
-    return result.rows[0];
+
+    await auditService.createAuditLog({
+      admin_id: userId,
+      action: "APPLICATION_APPROVED",
+      target_type: "adoption_application",
+      target_id: applicationId,
+      description: `NGO approved application ${applicationId}`
+    });
+
+    return {
+      application_id: applicationId,
+      status: "approved"
+    };
 
   } catch (err) {
     await client.query("ROLLBACK");
@@ -293,5 +473,9 @@ const updateAdoptionStatus = async (application_id, status) => {
 module.exports = {
   submitApplication,
   getUserApplications,
-  updateAdoptionStatus
+  getNgoPetsWithApplications,
+  getApplicationsForPet,
+  getApplicationDetails,
+  approveApplication,
+  rejectApplication,
 };
