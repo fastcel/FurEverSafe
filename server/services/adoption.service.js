@@ -85,6 +85,52 @@ const submitApplication = async (data) => {
   }
 };
 
+const getUserApplications = async (user_id, tab) => {
+  let query = `
+    SELECT 
+      a.application_id,
+      a.status,
+      a.created_at,
+
+      l.listing_id,
+
+      p.pet_id,
+      p.name AS pet_name,
+      p.breed,
+      p.age,
+      p.city,
+      p.gender,
+
+      pt.name AS pet_type
+
+    FROM adoption_applications a
+    JOIN adoption_listings l ON l.listing_id = a.listing_id
+    JOIN pets p ON p.pet_id = l.pet_id
+    LEFT JOIN pet_types pt ON pt.pet_type_id = p.pet_type_id
+
+    WHERE a.user_id = $1
+  `;
+
+  const values = [user_id];
+
+  // 🔵 ongoing tab
+  if (tab === "ongoing") {
+    query += ` AND a.status = 'pending'`;
+  }
+
+  // 🟡 previous tab
+  else if (tab === "previous") {
+    query += ` AND a.status IN ('approved', 'rejected', 'cancelled')`;
+  }
+
+  query += ` ORDER BY a.created_at DESC`;
+
+  const result = await pool.query(query, values);
+  return result.rows;
+};
+
+
 module.exports = {
   submitApplication,
+  getUserApplications,
 };
