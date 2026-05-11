@@ -3,8 +3,11 @@ const router = express.Router();
 
 const abuseController = require("../controllers/abuse.controller");
 
+
 // POST /api/abuse/report
 router.post("/report", abuseController.submitReport);
+router.get("/my-reports", abuseController.getMyReports);
+router.get("/my-reports/:id", abuseController.getReportDetails);
 
 router.patch(
   "/:id/status",

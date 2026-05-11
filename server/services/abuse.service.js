@@ -82,6 +82,65 @@ const submitReport = async (data) => {
   }
 };
 
+
+const getUserReports = async (user_id) => {
+  const result = await pool.query(
+    `
+    SELECT 
+      report_id,
+      tracking_id,
+      status,
+      created_at,
+      abuse_datetime,
+      severity
+    FROM abuse_reports
+    WHERE user_id = $1
+    ORDER BY created_at DESC
+    `,
+    [user_id]
+  );
+
+  return result.rows;
+};
+
+
+const getReportById = async (report_id, user_id) => {
+  const reportResult = await pool.query(
+    `
+    SELECT 
+      r.*,
+      l.latitude,
+      l.longitude,
+      l.address,
+      pt.name AS pet_type
+    FROM abuse_reports r
+    LEFT JOIN locations l ON l.location_id = r.location_id
+    LEFT JOIN pet_types pt ON pt.pet_type_id = r.pet_type_id
+    WHERE r.report_id = $1 AND r.user_id = $2
+    `,
+    [report_id, user_id]
+  );
+
+  if (!reportResult.rows.length) {
+    throw new Error("Report not found");
+  }
+
+  const report = reportResult.rows[0];
+
+  const imagesResult = await pool.query(
+    `
+    SELECT image_url
+    FROM report_images
+    WHERE report_id = $1
+    `,
+    [report_id]
+  );
+
+  return {
+    ...report,
+    images: imagesResult.rows.map(i => i.image_url)
+  };
+};
 /* ======================================================
    UPDATE REPORT STATUS (NGO)
 ====================================================== */
@@ -142,5 +201,7 @@ const updateReportStatus = async (report_id, status) => {
 
 module.exports = {
   submitReport,
-  updateReportStatus
+  updateReportStatus,
+  getUserReports,
+  getReportById
 };

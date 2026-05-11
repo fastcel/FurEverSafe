@@ -40,7 +40,32 @@ const updateStatus = async (req, res) => {
   }
 };
 
+
+const getMyReports = async (req, res) => {
+  try {
+    const user_id = 1; // or hardcoded for now
+    const data = await abuseService.getUserReports(user_id);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const getReportDetails = async (req, res) => {
+  try {
+    const user_id = 1;
+    const report_id = req.params.id;
+
+    const data = await abuseService.getReportById(report_id, user_id);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   submitReport,
-  updateStatus
+  updateStatus,
+  getMyReports,
+  getReportDetails
 };
