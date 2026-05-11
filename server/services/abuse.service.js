@@ -3,6 +3,7 @@ const { createNotification } = require("./notification.service");
 const { addReward } = require("./reward.service");
 
 
+
 const submitReport = async (data) => {
   const client = await pool.connect();
 
@@ -56,7 +57,8 @@ const submitReport = async (data) => {
 
     await client.query("COMMIT");
 
-    // ✅ SIDE EFFECTS (AFTER COMMIT)
+    // SIDE EFFECTS (AFTER COMMIT)
+
     await addReward({
       user_id: data.user_id,
       points: 30,
@@ -81,6 +83,7 @@ const submitReport = async (data) => {
     client.release();
   }
 };
+
 
 
 const getUserReports = async (user_id) => {

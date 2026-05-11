@@ -5,7 +5,10 @@ const abuseService = require("../services/abuse.service");
 ========================= */
 const submitReport = async (req, res) => {
   try {
-    const result = await abuseService.submitReport(req.body);
+    const result = await abuseService.submitReport({
+      ...req.body,
+      user_id: req.user.id
+    });
 
     res.status(201).json({
       message: "Report submitted successfully",
@@ -21,13 +24,18 @@ const submitReport = async (req, res) => {
   }
 };
 
-
+/* =========================
+   UPDATE STATUS
+========================= */
 const updateStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
-    const result = await abuseService.updateReportStatus(id, status);
+    const result = await abuseService.updateReportStatus(
+      id,
+      status
+    );
 
     res.json({
       message: "Status updated",
@@ -36,30 +44,50 @@ const updateStatus = async (req, res) => {
 
   } catch (err) {
     console.log(err);
-    res.status(500).json({ error: "Failed to update report status" });
+
+    res.status(500).json({
+      error: "Failed to update report status"
+    });
   }
 };
 
-
+/* =========================
+   GET MY REPORTS
+========================= */
 const getMyReports = async (req, res) => {
   try {
-    const user_id = 1; // or hardcoded for now
+    const user_id = req.user.id;
+
     const data = await abuseService.getUserReports(user_id);
+
     res.json(data);
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message
+    });
   }
 };
 
+/* =========================
+   GET REPORT DETAILS
+========================= */
 const getReportDetails = async (req, res) => {
   try {
-    const user_id = 1;
+    const user_id = req.user.id;
     const report_id = req.params.id;
 
-    const data = await abuseService.getReportById(report_id, user_id);
+    const data = await abuseService.getReportById(
+      report_id,
+      user_id
+    );
+
     res.json(data);
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message
+    });
   }
 };
 
