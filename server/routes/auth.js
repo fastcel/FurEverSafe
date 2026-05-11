@@ -1,34 +1,31 @@
 const express = require("express");
+const router = express.Router();
+
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { pool } = require("../db");
 
-const router = express.Router();
-
 /* ======================================================
-   SIGNUP (TC-01 + TC-02)
+   SIGNUP
 ====================================================== */
 router.post("/signup", async (req, res) => {
   console.log("🔥 REQUEST HIT /signup");
 
   try {
-    const { username, email, contact, password, role } = req.body;
+    const { name, email, contact, password, role } = req.body;
 
-    // Missing fields
-    if (!username || !email || !contact || !password || !role) {
+    if (!name || !email || !contact || !password || !role) {
       return res.status(400).json({
         error: "Please fill in all required fields",
       });
     }
 
-    // Password constraint
     if (password.length < 8) {
       return res.status(400).json({
         error: "Password must be at least 8 characters long",
       });
     }
 
-    // Duplicate email
     const emailCheck = await pool.query(
       "SELECT * FROM users WHERE email = $1",
       [email]
@@ -36,45 +33,33 @@ router.post("/signup", async (req, res) => {
 
     if (emailCheck.rows.length > 0) {
       return res.status(409).json({
-        error: "This email is already registered. Try logging in instead.",
-      });
-    }
-
-    // Duplicate username
-    const usernameCheck = await pool.query(
-      "SELECT * FROM users WHERE username = $1",
-      [username]
-    );
-
-    if (usernameCheck.rows.length > 0) {
-      return res.status(409).json({
-        error: "This username is already taken. Please choose another one.",
+        error: "Email already registered",
       });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await pool.query(
-      `INSERT INTO users (username, email, contact_number, password, role)
+      `INSERT INTO users (name, email, contact_number, password_hash, role)
        VALUES ($1, $2, $3, $4, $5)`,
-      [username, email, contact, hashedPassword, role]
+      [name, email, contact, hashedPassword, role]
     );
 
     return res.status(201).json({
-      message: "Account created successfully. You can now log in.",
+      message: "Account created successfully",
     });
 
   } catch (err) {
     console.log("❌ SIGNUP ERROR:", err);
+
     return res.status(500).json({
-      error: "Something went wrong while creating account",
+      error: "Something went wrong during signup",
     });
   }
 });
 
-
 /* ======================================================
-   LOGIN (TC-03 + TC-04)
+   LOGIN
 ====================================================== */
 router.post("/login", async (req, res) => {
   console.log("🔥 REQUEST HIT /login");
@@ -89,19 +74,22 @@ router.post("/login", async (req, res) => {
     }
 
     const userResult = await pool.query(
-      "SELECT * FROM users WHERE username = $1",
+      "SELECT * FROM users WHERE name = $1",
       [username]
     );
 
-    if (userResult.rows.length === 0) {
+    const user = userResult.rows[0];
+
+    if (!user) {
       return res.status(401).json({
         error: "Invalid username or password",
       });
     }
 
-    const user = userResult.rows[0];
-
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(
+      password,
+      user.password_hash
+    );
 
     if (!isMatch) {
       return res.status(401).json({
@@ -109,26 +97,26 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // JWT token (for future auth)
     const token = jwt.sign(
-      { id: user.id, role: user.role },
+      {
+        id: user.user_id,
+        role: user.role,
+      },
       "secretkey",
       { expiresIn: "1d" }
     );
 
-    // Role-based response (TC-03)
-    let redirectTo = "/citizen-dashboard";
-
-    if (user.role === "ngo") {
-      redirectTo = "/ngo-dashboard";
-    }
+    const redirectTo =
+      user.role === "ngo"
+        ? "/ngo-dashboard"
+        : "/citizen-dashboard";
 
     return res.status(200).json({
       message: "Login successful",
       token,
       user: {
-        id: user.id,
-        username: user.username,
+        id: user.user_id,
+        name: user.name,
         role: user.role,
       },
       redirectTo,
@@ -136,6 +124,7 @@ router.post("/login", async (req, res) => {
 
   } catch (err) {
     console.log("❌ LOGIN ERROR:", err);
+
     return res.status(500).json({
       error: "Something went wrong during login",
     });
