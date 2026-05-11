@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
+import UserNotifications from "./pages/UserNotifications";
 import CitizenDashboard from "./pages/CitizenDashboard";
 import ReportAbuse from "./pages/ReportAbuse";
 import NGOAbuseReports from "./pages/NGOAbuseReports";
@@ -19,6 +20,10 @@ export default function App() {
         <Route
           path="/citizen-dashboard"
           element={<CitizenDashboard />}
+        />
+        <Route
+          path="/notifications"
+          element={<UserNotifications />}
         />
         <Route
           path="/report-abuse"
