@@ -2,12 +2,12 @@ import Sidebar from "../components/Sidebar";
 
 export default function Layout({ children }) {
   return (
-    <div className="flex min-h-screen w-full bg-[#f4f1ea]">
+    <div className="flex w-screen min-h-screen bg-[#f0ebe0] overflow-x-hidden">
+      {/* Sidebar */}
       <Sidebar />
 
-      <div className="flex-1 overflow-y-auto">
-        {children}
-      </div>
+      {/* Main Content */}
+      <main className="flex-1 w-full overflow-y-auto">{children}</main>
     </div>
   );
 }
