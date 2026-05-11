@@ -2,7 +2,7 @@ const adoptionService = require("../services/adoption.service");
 
 const submitApplication = async (req, res) => {
   try {
-    const result = await adoptionService.submitApplication(req.body);
+    const result = await adoptionService.submitApplication(req.body,req.user.id);
 
     return res.status(201).json({
       message: "Application submitted successfully",

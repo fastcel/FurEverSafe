@@ -5,13 +5,19 @@ const { addReward } = require("./reward.service");
 /* ======================================================
    SUBMIT APPLICATION
 ====================================================== */
-const submitApplication = async (data) => {
+const auditService = require("./audit.service");
+
+const submitApplication = async (data, userId) => {
   const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
-
-    // STEP 0: validate listing
+    // =====================================================
+    // STEP 0: VALIDATE listing exists (IMPORTANT FIX)
+    // =====================================================
+    if (!data.listing_id) {
+      throw new Error("listing_id required");
+    }
     const listingCheck = await client.query(
       `SELECT listing_id FROM adoption_listings WHERE listing_id = $1`,
       [data.listing_id]
@@ -29,8 +35,16 @@ const submitApplication = async (data) => {
       VALUES ($1, $2, 'pending')
       RETURNING *
       `,
-      [data.listing_id, data.user_id]
+      [data.listing_id, userId]
     );
+
+    await auditService.createAuditLog({
+      admin_id: userId,
+      action: "ADOPTION_APPLY",
+      target_type: "adoption_application",
+      target_id: application.application_id,
+      description: `User ${userId} applied for listing ${data.listing_id}`,
+    });
 
     const application = applicationResult.rows[0];
 
@@ -80,6 +94,13 @@ const submitApplication = async (data) => {
       message: `Your adoption application has been submitted`,
       source_type: "adoption_application",
       source_id: application.application_id
+
+    await auditService.createAuditLog({
+      admin_id: userId,
+      action: "ADOPTION_PROFILE_CREATED",
+      target_type: "adoption_profile",
+      target_id: application.application_id,
+      description: `Profile created for application ${application.application_id}`,
     });
 
     return application;

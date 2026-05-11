@@ -39,17 +39,13 @@ export default function SignupPage() {
       // ✅ map backend errors to fields
       if (message === "Email already exists") {
         setErrors({ email: message });
-      } 
-      else if (message === "Username already exists") {
+      } else if (message === "Username already exists") {
         setErrors({ name: message });
-      } 
-      else if (message === "All fields are required") {
+      } else if (message === "All fields are required") {
         setErrors({ general: message });
-      } 
-      else if (message) {
+      } else if (message) {
         setErrors({ general: message });
-      } 
-      else {
+      } else {
         setErrors({ general: "Server error. Please try again." });
       }
     }
@@ -57,7 +53,6 @@ export default function SignupPage() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden">
-      
       {/* LEFT IMAGE */}
       <div className="w-1/2 h-full overflow-hidden">
         <img
@@ -69,7 +64,6 @@ export default function SignupPage() {
 
       {/* RIGHT FORM */}
       <div className="w-1/2 h-full bg-[#eef5e0] flex flex-col items-center justify-start pt-5 px-10 py-8 overflow-y-auto">
-
         {/* LOGO */}
         <div className="flex flex-col items-center mb-4">
           <img
@@ -84,12 +78,9 @@ export default function SignupPage() {
 
         {/* CARD */}
         <div className="bg-white rounded-2xl shadow-sm px-7 py-6 w-full max-w-md">
-
           {/* GENERAL ERROR */}
           {errors.general && (
-            <p className="text-red-500 text-sm mb-3">
-              {errors.general}
-            </p>
+            <p className="text-red-500 text-sm mb-3">{errors.general}</p>
           )}
 
           {/* Username */}
@@ -175,15 +166,15 @@ export default function SignupPage() {
               </button>
 
               <button
-              onClick={() => setRole("ngo")}
-              className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition ${
-                role === "ngo"
-                  ? "bg-[#e87aab] text-white"
-                  : "bg-white text-gray-600 border-gray-300"
-              }`}
-            >
-              NGO Rep
-            </button>
+                onClick={() => setRole("ngo")}
+                className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition ${
+                  role === "ngo"
+                    ? "bg-[#e87aab] text-white"
+                    : "bg-white text-gray-600 border-gray-300"
+                }`}
+              >
+                NGO Rep
+              </button>
             </div>
           </div>
 
