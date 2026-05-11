@@ -2,7 +2,7 @@ const milestoneService = require("../services/milestone.service");
 
 const getMilestones = async (req, res) => {
   try {
-    const userId = 1; // 🔥 HARD CODE FOR NOW (as you said)
+    const userId = req.user.id;
 
     const data = await milestoneService.getUserMilestones(userId);
 

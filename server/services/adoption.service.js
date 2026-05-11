@@ -2,6 +2,7 @@ const { pool } = require("../db");
 const { createNotification } = require("./notification.service");
 const { addReward } = require("./reward.service");
 
+
 /* ======================================================
    SUBMIT APPLICATION
 ====================================================== */
@@ -12,12 +13,14 @@ const submitApplication = async (data, userId) => {
 
   try {
     await client.query("BEGIN");
+
     // =====================================================
-    // STEP 0: VALIDATE listing exists (IMPORTANT FIX)
+    // STEP 0: VALIDATE listing exists
     // =====================================================
     if (!data.listing_id) {
       throw new Error("listing_id required");
     }
+
     const listingCheck = await client.query(
       `SELECT listing_id FROM adoption_listings WHERE listing_id = $1`,
       [data.listing_id]
@@ -27,7 +30,9 @@ const submitApplication = async (data, userId) => {
       throw new Error("Invalid listing_id (does not exist)");
     }
 
+    // =====================================================
     // STEP 1: create application
+    // =====================================================
     const applicationResult = await client.query(
       `
       INSERT INTO adoption_applications
@@ -38,17 +43,11 @@ const submitApplication = async (data, userId) => {
       [data.listing_id, userId]
     );
 
-    await auditService.createAuditLog({
-      admin_id: userId,
-      action: "ADOPTION_APPLY",
-      target_type: "adoption_application",
-      target_id: application.application_id,
-      description: `User ${userId} applied for listing ${data.listing_id}`,
-    });
-
     const application = applicationResult.rows[0];
 
+    // =====================================================
     // STEP 2: create profile
+    // =====================================================
     await client.query(
       `
       INSERT INTO adoption_application_profiles
@@ -87,13 +86,24 @@ const submitApplication = async (data, userId) => {
 
     await client.query("COMMIT");
 
-    // 🔥 NOTIFICATION (AFTER COMMIT)
+    // =====================================================
+    // SIDE EFFECTS (AFTER COMMIT)
+    // =====================================================
     await createNotification({
       user_id: data.user_id,
       type: "adoption",
       message: `Your adoption application has been submitted`,
       source_type: "adoption_application",
-      source_id: application.application_id});
+      source_id: application.application_id
+    });
+
+    await auditService.createAuditLog({
+      admin_id: userId,
+      action: "ADOPTION_APPLY",
+      target_type: "adoption_application",
+      target_id: application.application_id,
+      description: `User ${userId} applied for listing ${data.listing_id}`,
+    });
 
     await auditService.createAuditLog({
       admin_id: userId,
@@ -235,18 +245,25 @@ const updateAdoptionStatus = async (application_id, status) => {
     /* ======================================================
        6. SIDE EFFECTS (SAFE AFTER COMMIT)
     ====================================================== */
-    try {
-      if (status === "approved") {
-        await addReward({
-          user_id: data.user_id,
-          points: 50,
-          source_type: "adoption",
-          source_id: application_id
-        });
-      }
-    } catch (err) {
-      console.log("🔥 Reward failed (non-blocking):", err.message);
-    }
+    
+    if (status === "approved") {
+  await client.query(
+    `
+    UPDATE users
+    SET reward_points = COALESCE(reward_points, 0) + 50
+    WHERE user_id = $1
+    `,
+    [data.user_id]
+  );
+
+  await addReward({
+    user_id: data.user_id,
+    points: 50,
+    source_type: "adoption",
+    source_id: application_id
+  });
+}
+
 
     try {
       await createNotification({
