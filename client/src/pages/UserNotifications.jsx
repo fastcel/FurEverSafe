@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Added useEffect
+import axios from 'axios';
 import Layout from "../components/Layout";
 import {
   NotificationsNone as BellIcon,
@@ -11,60 +12,81 @@ import {
   Close as CloseIcon
 } from "@mui/icons-material";
 
-// Dummy Data
-const NOTIFICATIONS = [
-  { id: 1, text: "Your adoption request for Milo is approved", type: "success" },
-  { id: 2, text: "Your adoption request for Bella is processing", type: "info" },
-  { id: 3, text: "Your adoption request for Jack is approved", type: "success" },
-  { id: 4, text: "Your recent abuse request has been approved", type: "success" },
-  { id: 5, text: "Your adoption request for Emma is rejected", type: "error" },
-  { id: 6, text: "Your recent abuse request has been rejected", type: "info" },
-  { id: 7, text: "Your adoption request for Olivia is approved", type: "error" },
-];
-
-const REPORTS = [
-  { id: "RPT-2847", animal: "Dog", type: "abuse", location: "Gulberg, Lahore", date: "April 27th, 2026", severity: "Moderate", status: "Under Review" },
-  { id: "RPT-2906", animal: "Cat", type: "abuse", location: "Faisal Town", date: "April 18th, 2026", severity: "Minor", status: "Action Taken" },
-  { id: "RPT-3447", animal: "Duck", type: "abuse", location: "Gulberg", date: "April 20th, 2026", severity: "Moderate", status: "In Progress" },
-  { id: "RPT-3448", animal: "Cat", type: "abuse", location: "DHA Phase 1", date: "April 02th, 2026", severity: "Moderate", status: "Rejected" },
-  { id: "RPT-3449", animal: "Cow", type: "abuse", location: "Johar Town", date: "April 15th, 2026", severity: "Severe", status: "Action Taken" },
-  { id: "RPT-3450", animal: "Horse", type: "abuse", location: "Cantt", date: "April 6th, 2026", severity: "Minor", status: "Under Review" },
-];
-
 export default function UserNotifications() {
   const [activeTab, setActiveTab] = useState("Notifications");
   const [selectedReport, setSelectedReport] = useState(null);
+
+  const [notifications, setNotifications] = useState([]);
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+
+useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+
+        // 1. Fetch real notifications from notification.service.js
+        const notifRes = await axios.get(`http://localhost:5000/api/notifications`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setNotifications(notifRes.data);
+
+        // 2. Fetch real abuse reports from abuse.service.js
+        const reportsRes = await axios.get(`http://localhost:5000/api/abuse/my-reports`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setReports(reportsRes.data);
+
+      } catch (err) {
+        console.error("Initialization Error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUserData();
+  }, []);
+
+  // --- FETCH FULL REPORT DETAILS ---
+  const handleReportClick = async (reportId) => {
+    try {
+      const token = localStorage.getItem('token');
+      // Calls getReportById in your service to get full description/images
+      const res = await axios.get(`http://localhost:5000/api/abuse/my-reports/${reportId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSelectedReport(res.data);
+    } catch (err) {
+      alert("Failed to load report details.");
+    }
+  };
 
   const showAlert = (message) => {
     alert(message);
   };
 
-  const renderNotifications = () => (
+ const renderNotifications = () => (
     <div className="bg-[#bfb5a5] p-8 rounded-xl border-[3px] border-black shadow-sm w-full mx-auto mt-6">
       <div className="space-y-4">
-        {/* TODO: Fetch notifications from database */}
-        {NOTIFICATIONS.map((notif) => (
+        {/* MODIFIED: Mapping real 'notifications' state instead of dummy data */}
+        {notifications.length > 0 ? notifications.map((notif) => (
           <div
-            key={notif.id}
-            className="bg-white p-5 rounded-lg flex items-center border-[3px] border-black shadow-sm cursor-pointer hover:bg-gray-50 transition-all"
-            onClick={() => showAlert(`Opening details for: ${notif.text}`)}
+            key={notif.notification_id}
+            className={`bg-white p-5 rounded-lg flex items-center border-[3px] border-black shadow-sm cursor-pointer hover:bg-gray-50 transition-all ${notif.is_read ? 'opacity-60' : ''}`}
           >
             <div className="mr-5">
-              {notif.type === "error" ? (
+              {notif.type === "abuse_report" ? (
                 <WarningIcon className="text-red-500 scale-125" />
               ) : (
                 <BellIcon className="text-yellow-500 scale-125" />
               )}
             </div>
             <p className="text-[#4a3f35] font-bold text-xl">
-              {notif.text.split(" ").map((word, i) => (
-                <span key={i} className={["Milo", "Bella", "Jack", "Emma", "Olivia"].includes(word) ? "text-primary" : ""}>
-                  {word}{" "}
-                </span>
-              ))}
+              {notif.message}
             </p>
           </div>
-        ))}
+        )) : <p className="text-center font-bold">No notifications found.</p>}
       </div>
     </div>
   );
@@ -76,15 +98,11 @@ export default function UserNotifications() {
       {/* Stats Cards */}
       <div className="flex justify-between gap-6">
         {[
-          { label: "Total Points", value: 190 },
+          { label: "Total Points", value: 190 }, 
           { label: "Pets Adopted", value: 2 },
-          { label: "Reports Submitted", value: 3 }
+          { label: "Reports Submitted", value: reports.length } // Using real length
         ].map((stat) => (
-          <div
-            key={stat.label}
-            className="flex-1 bg-[#dcd3c1] p-8 rounded-xl text-center border-[3px] border-black shadow-sm cursor-pointer hover:bg-[#cec3ad] transition-all"
-            onClick={() => showAlert(`Refreshing ${stat.label} stats...`)}
-          >
+          <div key={stat.label} className="flex-1 bg-[#dcd3c1] p-8 rounded-xl text-center border-[3px] border-black shadow-sm">
             <p className="text-5xl font-black text-primary mb-1">{stat.value}</p>
             <p className="text-2xl font-black text-[#4a3f35]">{stat.label}</p>
           </div>
@@ -169,24 +187,24 @@ export default function UserNotifications() {
     <div className="space-y-5 mt-6 w-full mx-auto">
       <p className="italic text-[#4a3f35] font-bold text-xl">Track your previous abuse reports</p>
       {/* TODO: Fetch reports from database */}
-      {REPORTS.map((report) => (
+      {reports.map((report) => (
         <div
-          key={report.id}
-          onClick={() => setSelectedReport(report)}
-          className="bg-[#dcd3c1] p-6 rounded-xl flex items-center justify-between cursor-pointer border-[3px] border-black shadow-sm w-full-sm hover:bg-[#cec3ad] transition-all"
+          key={report.report_id}
+          onClick={() => handleReportClick(report.report_id)} // Fetching full details on click
+          className="bg-[#dcd3c1] p-6 rounded-xl flex items-center justify-between cursor-pointer border-[3px] border-black shadow-sm hover:bg-[#cec3ad] transition-all"
         >
           <div>
-            <h4 className="text-2xl font-black text-[#4a3f35]">{report.id} - {report.animal} abuse, {report.location}</h4>
-            <p className="text-gray-700 font-bold text-lg">Submitted {report.date} - {report.severity} Severity</p>
+            <h4 className="text-2xl font-black text-[#4a3f35]">{report.tracking_id} - Reported incident</h4>
+            <p className="text-gray-700 font-bold text-lg">
+              Submitted {new Date(report.created_at).toLocaleDateString()} - {report.severity.toUpperCase()} Severity
+            </p>
           </div>
           <div className="flex items-center gap-6">
-            <span className={`px-6 py-2 rounded-lg font-black text-lg border-[3px] border-black shadow-sm w-full-sm'}
-              ${report.status === 'Under Review' ? 'bg-[#f4e4bc]' :
-                report.status === 'Action Taken' ? 'bg-success text-white' :
-                  report.status === 'In Progress' ? 'bg-[#bae1ff]' :
-                    report.status === 'Rejected' ? 'bg-red-500 text-white' : ''}
-            `}>
-              {report.status}
+            <span className={`px-6 py-2 rounded-lg font-black text-lg border-[3px] border-black shadow-sm ${
+              report.status === 'under_review' ? 'bg-[#f4e4bc]' :
+              report.status === 'action_taken' ? 'bg-success text-white' : 'bg-gray-200'
+            }`}>
+              {report.status.replace('_', ' ').toUpperCase()}
             </span>
             <ChevronRightIcon className="text-[#4a3f35] scale-125" />
           </div>
@@ -205,92 +223,69 @@ export default function UserNotifications() {
       </button>
 
       <div className="grid grid-cols-2 gap-8">
-        {/* Main Details */}
         <div className="space-y-8">
           <div className="bg-[#dcd3c1] p-8 rounded-xl border-[3px] border-black shadow-sm">
             <h3 className="text-3xl font-bold text-[#4a3f35] mb-8 border-b-[3px] border-black pb-3">
-              {selectedReport.id} - Report Details
+              {selectedReport.tracking_id} - Report Details
             </h3>
             <div className="grid grid-cols-2 gap-y-6 text-2xl">
+              {/* MODIFIED: Using real keys from getReportById (abuse_datetime, pet_type, etc) */}
               {[
-                { label: "Animal", value: selectedReport.animal },
+                { label: "Animal", value: selectedReport.pet_type || "Other" },
                 { label: "Severity", value: selectedReport.severity },
-                { label: "Location", value: `${selectedReport.location}, Lahore` },
-                { label: "Date Reported", value: selectedReport.date },
-                { label: "NGO Assigned", value: "PawSave, Lahore" },
-                { label: "Status", value: selectedReport.status }
+                { label: "Location", value: selectedReport.address || "Lahore" },
+                { label: "Date Reported", value: new Date(selectedReport.abuse_datetime).toLocaleDateString() },
+                { label: "Status", value: selectedReport.status.toUpperCase() }
               ].map((row) => (
-                <div key={row.label} className="contents group cursor-pointer" onClick={() => showAlert(`Detail: ${row.label}`)}>
-                  <span className="font-black text-[#4a3f35] group-hover:text-primary transition-colors">{row.label}</span>
-                  <span className="text-primary font-black group-hover:underline">{row.value}</span>
+                <div key={row.label} className="contents group">
+                  <span className="font-black text-[#4a3f35]">{row.label}</span>
+                  <span className="text-primary font-black">{row.value}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div
-            className="bg-[#dcd3c1] p-8 rounded-xl border-[3px] border-black shadow-sm cursor-pointer hover:bg-[#cec3ad] transition-colors"
-            onClick={() => showAlert("Full description view not implemented yet.")}
-          >
+          <div className="bg-[#dcd3c1] p-8 rounded-xl border-[3px] border-black shadow-sm">
             <h3 className="text-3xl font-black text-[#4a3f35] mb-4">Description</h3>
             <p className="text-primary font-black text-xl leading-relaxed">
-              Saw a bunch of kids abusing a dog by throwing objects at it. The poor thing was severely injured. It was probably a stray dog and seemed extremely malnourished as well.
+              {selectedReport.description}
             </p>
           </div>
         </div>
 
-        {/* Attachments & Status Tracker */}
         <div className="space-y-8">
           <div className="bg-[#dcd3c1] p-8 rounded-xl border-[3px] border-black shadow-sm">
             <h3 className="text-3xl font-black text-[#4a3f35] mb-3">Attachments</h3>
-            <p className="text-[#4a3f35] font-bold text-xl mb-6">3 files attached.</p>
+            <p className="text-[#4a3f35] font-bold text-xl mb-6">{selectedReport.images?.length || 0} files attached.</p>
             <div className="flex gap-6">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="w-32 h-24 bg-primary/10 border-[3px] border-black rounded-xl flex items-center justify-center relative cursor-pointer hover:bg-primary/20 transition-all shadow-sm"
-                  onClick={() => showAlert(`Opening image attachment ${i}...`)}
-                >
-                  <ImageIcon className="text-primary scale-150" />
-                  <span
-                    className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center border-[2px] border-black cursor-pointer hover:bg-red-600 transition-colors shadow-sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      showAlert("Action not possible: Cannot delete archived attachments.");
-                    }}
-                  >
-                    <CloseIcon className="scale-110" />
-                  </span>
+              {/* MODIFIED: Mapping real image URLs from report_images table */}
+              {selectedReport.images?.map((url, i) => (
+                <div key={i} className="w-32 h-24 border-[3px] border-black rounded-xl overflow-hidden shadow-sm">
+                  <img src={url} className="w-full h-full object-cover" alt="attachment" />
                 </div>
               ))}
             </div>
           </div>
 
+          {/* Status Tracker logic mapped to DB status values */}
           <div className="bg-[#dcd3c1] p-8 rounded-xl border-[3px] border-black shadow-sm">
             <h3 className="text-3xl font-black text-[#4a3f35] mb-8">Status Tracker</h3>
             <div className="space-y-8 relative">
               <div className="absolute left-4 top-3 bottom-3 w-0.5 bg-black opacity-30"></div>
 
               {[
-                { label: "Report Submitted", date: "Apr 26th, 2026", done: true },
-                { label: "NGO notified", date: "Apr 26th, 2026", done: true },
-                { label: "Under Review", date: "Apr 27th, 2026", done: true },
-                { label: "Action Taken", date: "--", done: false, step: 4 }
+                { label: "Report Submitted", date: new Date(selectedReport.created_at).toLocaleDateString(), done: true },
+                { label: "Under Review", date: selectedReport.status !== 'pending' ? 'Completed' : '--', done: selectedReport.status !== 'pending' },
+                { label: "Action Taken", date: selectedReport.status === 'action_taken' ? 'Finalized' : '--', done: selectedReport.status === 'action_taken', step: 3 }
               ].map((step, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between relative z-10 cursor-pointer group"
-                  onClick={() => showAlert(`Status: ${step.label}`)}
-                >
+                <div key={idx} className="flex items-center justify-between relative z-10">
                   <div className="flex items-center gap-5">
                     {step.done ? (
-                      <div className="bg-success text-white rounded-full p-1.5 border-[2px] border-black shadow-sm"><CheckCircleIcon className="scale-110" /></div>
+                      <div className="bg-success text-white rounded-full p-1.5 border-[2px] border-black"><CheckCircleIcon /></div>
                     ) : (
-                      <div className="bg-gray-300 text-black rounded-full w-9 h-9 flex items-center justify-center font-black text-xl border-[2px] border-black shadow-sm">{step.step}</div>
+                      <div className="bg-gray-300 text-black rounded-full w-9 h-9 flex items-center justify-center font-black border-[2px] border-black">{step.step || idx+1}</div>
                     )}
-                    <span className={`font-black text-xl transition-colors ${step.done ? 'text-primary' : 'text-gray-400'} group-hover:text-primary`}>
-                      {step.label}
-                    </span>
+                    <span className={`font-black text-xl ${step.done ? 'text-primary' : 'text-gray-400'}`}>{step.label}</span>
                   </div>
                   <span className="text-gray-700 font-black text-lg">{step.date}</span>
                 </div>
@@ -325,11 +320,16 @@ export default function UserNotifications() {
           ))}
         </div>
 
-        <h1 className="text-5xl font-black text-purple-900  mb-4">{activeTab}</h1>
-
-        {activeTab === "Notifications" && renderNotifications()}
-        {activeTab === "Milestones" && renderMilestones()}
-        {activeTab === "My Reports" && (selectedReport ? renderReportDetails() : renderReportsList())}
+        {loading ? (
+           <h1 className="text-3xl font-black animate-pulse">Loading dashboard...</h1>
+        ) : (
+          <>
+            <h1 className="text-5xl font-black text-purple-900 mb-4">{activeTab}</h1>
+            {activeTab === "Notifications" && renderNotifications()}
+            {activeTab === "Milestones" && renderMilestones()}
+            {activeTab === "My Reports" && (selectedReport ? renderReportDetails() : renderReportsList())}
+          </>
+        )}
       </div>
     </Layout>
   );
