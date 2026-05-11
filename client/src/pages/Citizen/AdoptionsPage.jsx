@@ -1,27 +1,46 @@
-import React, { useState } from 'react';
-import Layout from '../../components/layout';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import Layout from '../../components/Layout';
 import AdoptionItem from '../../components/AdoptionItem';
 import AdoptionFilterModal from '../../components/AdoptionFilterModal';
 
 export default function AdoptionsPage() {
     const [activeTab, setActiveTab] = useState('ongoing');
+    const [adoptions, setAdoptions] = useState([]);
+    const [loading, setLoading] = useState(true);
+
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [targetPet, setTargetPet] = useState("");
     const [showFilter, setShowFilter] = useState(false);
+    const [setShowSort] = useState(false);
 
-    const ongoingAdoptions = [
-        { id: 1, name: "Milo", breed: "Ginger", age: "3 years", location: "Lahore", status: "Processing", image: "https://placecats.com/150/150" },
-        { id: 2, name: "Oliver", breed: "Siamese", age: "3 years", location: "Lahore", status: "Approved", image: "https://placecats.com/151/151" },
-        { id: 3, name: "Willow", breed: "Persian", age: "3 years", location: "Lahore", status: "Processing", image: "https://placecats.com/152/152" },
-        { id: 4, name: "Jim", breed: "Sphynx", age: "3 years", location: "Lahore", status: "Approved", image: "https://placecats.com/153/153" },
-    ];
+    useEffect(() => {
+        const fetchAdoptions = async () => {
+            try {
+                setLoading(true);
+                // 1. Get the current user's ID (stored during login)
+                const user_id = localStorage.getItem('user_id'); 
+                
+                // 2. Call your REST API with query params
+                const response = await axios.get(`http://localhost:5000/api/adoption/my-applications`, {
+                    params: {
+                        user_id: user_id,
+                        tab: activeTab // This sends either 'ongoing' or 'previous'
+                    }
+                });
 
-    const previousAdoptions = [
-        { id: 5, name: "Rocky", breed: "Pug", age: "3 years", location: "Lahore", status: "Rejected", image: "https://placedog.net/150/150" },
-        { id: 6, name: "Bella", breed: "Pomeranian", age: "5 years", location: "Sheikhupura", status: "Rejected", image: "https://placedog.net/151/151" },
-        { id: 7, name: "Mocha", breed: "Persian", age: "1 year", location: "Karachi", status: "Cancelled", image: "https://placecats.com/154/154" },
-    ];
+                // 3. Update state with the rows from adoption.service.js
+                setAdoptions(response.data);
+                setLoading(false);
+            } catch (err) {
+                console.error("Failed to load adoptions:", err);
+                setLoading(false);
+            }
+        };
+
+        fetchAdoptions();
+    }, [activeTab]); // Re-fetch whenever user clicks a different tab
 
     const handleCancelClick = (name) => {
         setTargetPet(name);
@@ -62,15 +81,30 @@ export default function AdoptionsPage() {
                     </div>
                 </div>
 
-                {/* List */}
+                {/* The Dynamic List */}
                 <div className="space-y-4">
-                    {(activeTab === 'ongoing' ? ongoingAdoptions : previousAdoptions).map(pet => (
-                        <AdoptionItem
-                            key={pet.id}
-                            pet={pet}
-                            onCancel={() => handleCancelClick(pet.name)}
-                        />
-                    ))}
+                    {loading ? (
+                        <div className="text-center py-10 font-bold text-gray-500">Loading your applications...</div>
+                    ) : adoptions.length > 0 ? (
+                        adoptions.map(app => (
+                            <AdoptionItem
+                                key={app.application_id}
+                                pet={{
+                                    name: app.pet_name,
+                                    breed: app.breed,
+                                    age: app.age,
+                                    location: app.city,
+                                    status: app.status.charAt(0).toUpperCase() + app.status.slice(1), // Capitalize
+                                    image: "https://placecats.com/150/150" // You can add image_url if you join pet_images
+                                }}
+                                onCancel={() => handleCancelClick(app.pet_name)}
+                            />
+                        ))
+                    ) : (
+                        <div className="text-center py-10 text-gray-400 border-2 border-dashed border-gray-300">
+                            No {activeTab} applications found.
+                        </div>
+                    )}
                 </div>
 
                 {/* Cancellation Modal */}

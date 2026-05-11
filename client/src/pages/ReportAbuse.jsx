@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import axios from 'axios';
 import Layout from "../components/Layout";
 import EditIcon from "@mui/icons-material/Edit";
 import UploadIcon from "@mui/icons-material/Upload";
@@ -6,6 +7,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import PushPinIcon from "@mui/icons-material/PushPin";
 import { MapContainer, TileLayer, useMapEvents } from "react-leaflet";
+
+
 
 function MapClickHandler({ repinMode, onMapClick }) {
   useMapEvents({
@@ -42,6 +45,11 @@ export default function ReportAbuse() {
   const [geocoding, setGeocoding] = useState(false);
   const mapRef = useRef(null);
 
+  const [dateTime, setDateTime] = useState("");
+  const [animalType, setAnimalType] = useState("");
+  const [description, setDescription] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const severityConfig = [
     { label: "Minor", bg: "bg-[#a6e2b3]" },
     { label: "Moderate", bg: "bg-[#e8d5f3]" },
@@ -71,7 +79,57 @@ export default function ReportAbuse() {
       setGeocoding(false);
     });
   }
+// --- API SUBMISSION LOGIC ---
+  const handleSubmit = async (e) => {
+    if (e) e.preventDefault(); 
+    // ADD THESE LOGS TEMPORARILY:
+  console.log("Date:", dateTime);
+  console.log("Animal:", animalType);
+  console.log("Severity:", severity);
+  console.log("Desc:", description);
 
+    if (!dateTime || !animalType || !severity || !description) {
+      alert("Please fill in all required fields!");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token"); // Token from login
+      
+      const reportData = {
+        latitude: markerPos.lat,
+        longitude: markerPos.lng,
+        address: address,
+        description: description,
+        abuse_datetime: dateTime,
+        severity: severity.toLowerCase(),
+        // Mapping types to IDs as per DB schema
+        pet_type_id: animalType === "Dog" ? 1 : animalType === "Cat" ? 2 : 3,
+        images: [] // Sending empty array for now
+      };
+
+      const response = await axios.post(
+        "http://localhost:5000/api/abuse/report",
+        reportData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.status === 201) {
+        alert(`Success! Tracking ID: ${response.data.report.tracking_id}`);
+        // Reset form fields
+        setDescription("");
+        setSeverity(null);
+        setDateTime("");
+        setAnimalType("");
+      }
+    } catch (err) {
+      console.error("Submission Error:", err.response?.data || err.message);
+      alert("Error submitting report. Make sure you are logged in.");
+    } finally {
+      setLoading(false);
+    }
+  };
   function handleFiles(e) {
     const files = Array.from(e.target.files);
     setUploadedFiles((prev) => [
@@ -125,7 +183,9 @@ export default function ReportAbuse() {
                   </label>
                   <input
                     type="datetime-local"
-                    className="w-full p-3 border-2 border-black rounded bg-[#f8f5f0] text-sm cursor-pointer"
+                    value={dateTime} // Must match your useState name
+                    onChange={(e) => setDateTime(e.target.value)} // This "saves" what you type
+                     className="w-full p-3 border-2 border-black rounded bg-[#f8f5f0] text-sm cursor-pointer"
                   />
                 </div>
 
@@ -134,7 +194,10 @@ export default function ReportAbuse() {
                   <label className="block text-sm font-bold text-gray-800 mb-2">
                     Animal Type <span className="text-red-500">*</span>
                   </label>
-                  <select className="w-full p-3 border-2 border-black rounded bg-[#f8f5f0] text-sm appearance-none">
+                  <select 
+                  value={animalType} 
+                  onChange={(e) => setAnimalType(e.target.value)}
+                  className="w-full p-3 border-2 border-black rounded bg-[#f8f5f0] text-sm appearance-none">
                     <option>Select Animal Type...</option>
                     <option>Dog</option>
                     <option>Cat</option>
@@ -267,6 +330,8 @@ export default function ReportAbuse() {
                     <EditIcon />
                   </div>
                   <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
                     placeholder="Describe the animal's condition, what you witnessed, number of animals affected..."
                     className="w-full p-4 border-2 border-black rounded bg-[#f8f5f0] text-sm resize-none"
                     style={{ height: "260px" }}
@@ -339,8 +404,13 @@ export default function ReportAbuse() {
 
           {/* Submit */}
           <div className="flex justify-center mt-10">
-            <button className="bg-primary text-white px-16 py-4 text-xl font-bold rounded hover:opacity-90 transition shadow-md">
-              Submit
+            <button 
+              type="button"
+              onClick={handleSubmit}
+              disabled={loading}
+              className="bg-[#C2185B] text-white px-16 py-4 text-xl font-bold rounded hover:opacity-90 transition shadow-md border-2 border-black"
+            >
+              {loading ? "Submitting..." : "Submit Report"}
             </button>
           </div>
 

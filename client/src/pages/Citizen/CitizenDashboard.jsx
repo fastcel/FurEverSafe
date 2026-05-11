@@ -1,20 +1,45 @@
-import React, { useState } from 'react';
-import Layout from '../../components/layout';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import Layout from '../../components/Layout';
 import PetCard from '../../components/PetCard';
-import PetModal from '../../components/PetModal'; // <--- ADD THIS IMPORT
-import SortDropdown from '../../components/SortDropdown'; // New
-import FilterModal from '../../components/DashboardFilterModal'; // New
+import PetModal from '../../components/PetModal';
+import SortDropdown from '../../components/SortDropdown';
+import FilterModal from '../../components/DashboardFilterModal';
 
 export default function CitizenDashboard() {
   const [selectedPet, setSelectedPet] = useState(null);
-  const [showSort, setShowSort] = useState(false); // Toggle Sort
-  const [showFilter, setShowFilter] = useState(false); // Toggle Filter
+  const [showSort, setShowSort] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
 
-  // Sample data updated to match different animals
-  const cats = Array(5).fill({ name: "Luna", age: "3 months", gender: "female", breed: "Ragdoll", location: "Lahore", image: "https://placecats.com/300/200" });
-  const dogs = Array(4).fill({ name: "Max", age: "2 years", gender: "male", breed: "Golden Retriever", location: "Karachi", image: "https://placedog.net/300/200" });
-  const rabbits = Array(4).fill({ name: "Snowy", age: "5 months", gender: "female", breed: "Angora", location: "Islamabad", image: "https://placecats.com/301/200" });
+  //API INTEGRATION STATES
+    const [pets, setPets] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
+
+  // --- FETCH DATA FROM REST API ---
+  useEffect(() => {
+    const fetchPets = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get('http://localhost:5000/api/pets');
+        
+        setPets(response.data); 
+        setLoading(false);
+      } catch (err) {
+        console.error("API Error:", err);
+        setError("Failed to load pets. Is the server running?");
+        setLoading(false);
+      }
+    };
+
+    fetchPets();
+  }, []);
+
+  // Filter live data into categories
+  const cats = pets.filter(p => p.animalType?.toLowerCase() === 'cat');
+  const dogs = pets.filter(p => p.animalType?.toLowerCase() === 'dog');
+  const rabbits = pets.filter(p => p.animalType?.toLowerCase() === 'rabbit');
 
   return (
     <Layout>
@@ -51,31 +76,54 @@ export default function CitizenDashboard() {
           </div>
         </div>
 
-        {/* 3. Scrollable Content Section */}
         <div className="w-full">
-          <section className="mb-12">
-            <h2 className="text-xl font-bold mb-4 text-[#2D2D2D]">Cats</h2>
-            <div className="flex flex-wrap gap-8">
-              {cats.map((item, i) => <PetCard key={`cat-${i}`} {...item} onClick={() => setSelectedPet(item)} />)}
-            </div>
-          </section>
+          {loading ? (
+            <div className="text-center py-20 font-bold text-xl animate-pulse">Loading pets from server...</div>
+          ) : error ? (
+            <div className="text-center py-20 text-red-600 font-bold">{error}</div>
+          ) : (
+            <>
+              {/* Cats Section */}
+              {cats.length > 0 && (
+                <section className="mb-12">
+                  <h2 className="text-xl font-bold mb-4 text-[#2D2D2D]">Cats</h2>
+                  <div className="flex flex-wrap gap-8">
+                    {cats.map((item) => (
+                      <PetCard key={item._id} {...item} onClick={() => setSelectedPet(item)} />
+                    ))}
+                  </div>
+                </section>
+              )}
 
-          {/* Dogs Section */}
-          <section className="mb-12 pt-6 border-t border-gray-400">
-            <h2 className="text-xl font-bold mb-4 text-[#2D2D2D]">Dogs</h2>
-            <div className="flex flex-wrap gap-5">
-              {dogs.map((item, i) => <PetCard key={`dog-${i}`} {...item} onClick={() => setSelectedPet(item)} />)}
-            </div>
-          </section>
+              {/* Dogs Section */}
+              {dogs.length > 0 && (
+                <section className="mb-12 pt-6 border-t border-gray-400">
+                  <h2 className="text-xl font-bold mb-4 text-[#2D2D2D]">Dogs</h2>
+                  <div className="flex flex-wrap gap-8">
+                    {dogs.map((item) => (
+                      <PetCard key={item._id} {...item} onClick={() => setSelectedPet(item)} />
+                    ))}
+                  </div>
+                </section>
+              )}
 
-          {/* Rabbits Section */}
-          <section className="mb-12 pt-6 border-t border-gray-400">
-            <h2 className="text-xl font-bold mb-4 text-[#2D2D2D]">Rabbits</h2>
-            <div className="flex flex-wrap gap-5">
-              {rabbits.map((item, i) => <PetCard key={`rabbit-${i}`} {...item} onClick={() => setSelectedPet(item)} />)}
-            </div>
-          </section>
-          {/* ... other sections (Dogs, Rabbits) ... */}
+              {/* Rabbits Section */}
+              {rabbits.length > 0 && (
+                <section className="mb-12 pt-6 border-t border-gray-400">
+                  <h2 className="text-xl font-bold mb-4 text-[#2D2D2D]">Rabbits</h2>
+                  <div className="flex flex-wrap gap-8">
+                    {rabbits.map((item) => (
+                      <PetCard key={item._id} {...item} onClick={() => setSelectedPet(item)} />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {pets.length === 0 && (
+                <div className="text-center py-20 text-gray-500 italic">No furry friends currently available.</div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </Layout>
