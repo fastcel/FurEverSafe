@@ -1,3 +1,4 @@
+const { discriminatedUnion } = require("zod");
 const { pool } = require("../db");
 const { createNotification } = require("./notification.service");
 const { addReward } = require("./reward.service");
@@ -144,52 +145,245 @@ const getReportById = async (report_id, user_id) => {
     images: imagesResult.rows.map(i => i.image_url)
   };
 };
-/* ======================================================
-   UPDATE REPORT STATUS (NGO)
-====================================================== */
-const updateReportStatus = async (report_id, status) => {
+
+const getNgoReports = async (tab) => {
+
+  let query = `
+    SELECT
+      ar.report_id,
+      ar.tracking_id,
+      ar.description,
+      ar.status,
+      ar.created_at,
+      ar.abuse_datetime,
+      ar.severity,
+
+      pt.pet_type_id,
+      pt.name AS pet_type,
+
+      l.location_id,
+      l.city,
+      l.address,
+
+      u.user_id,
+      u.name AS reporter_name,
+      u.email AS reporter_email,
+
+      (
+        SELECT image_url
+        FROM report_images ri
+        WHERE ri.report_id = ar.report_id
+        LIMIT 1
+      ) AS image_url
+
+    FROM abuse_reports ar
+
+    LEFT JOIN users u
+      ON u.user_id = ar.user_id
+
+    LEFT JOIN pet_types pt
+      ON pt.pet_type_id = ar.pet_type_id
+
+    LEFT JOIN locations l
+      ON l.location_id = ar.location_id
+
+    WHERE 1=1
+  `;
+
+  /* =========================================
+     FILTERS
+  ========================================= */
+
+  if (tab === "current") {
+    query += `
+      AND ar.status IN ('pending', 'under_review')
+    `;
+  }
+
+  else if (tab === "previous") {
+    query += `
+      AND ar.status IN ('action_taken', 'rejected')
+    `;
+  }
+
+  query += `
+    ORDER BY ar.created_at DESC
+  `;
+
+  const result = await pool.query(query);
+
+  return result.rows;
+};
+
+/* =========================================
+   GET SINGLE REPORT DETAILS
+========================================= */
+const getReportByIdNgo = async (reportId) => {
+
+  const result = await pool.query(
+    `
+    SELECT
+      ar.report_id,
+      ar.tracking_id,
+      ar.description,
+      ar.status,
+      ar.created_at,
+      ar.abuse_datetime,
+      ar.severity,
+
+      pt.pet_type_id,
+      pt.name AS pet_type,
+
+      l.location_id,
+      l.city,
+      l.address,
+
+      u.user_id,
+      u.name AS reporter_name,
+      u.email AS reporter_email,
+      u.contact_number,
+
+      (
+        SELECT json_agg(image_url)
+        FROM report_images ri
+        WHERE ri.report_id = ar.report_id
+      ) AS images
+
+    FROM abuse_reports ar
+
+    LEFT JOIN users u
+      ON u.user_id = ar.user_id
+
+    LEFT JOIN pet_types pt
+      ON pt.pet_type_id = ar.pet_type_id
+
+    LEFT JOIN locations l
+      ON l.location_id = ar.location_id
+
+    WHERE ar.report_id = $1
+    `,
+    [reportId]
+  );
+
+  if (result.rows.length === 0) {
+    throw new Error("Report not found");
+  }
+
+  return result.rows[0];
+};
+
+/* =========================================
+   ACCEPT CASE
+========================================= */
+const acceptCase = async (reportId, ngoUserId) => {
   const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
 
+    // verify report exists
+    const reportCheck = await client.query(
+      `
+      SELECT report_id, user_id, tracking_id, status
+      FROM abuse_reports
+      WHERE report_id = $1
+      `,
+      [reportId]
+    );
+
+    if (reportCheck.rows.length === 0) {
+      throw new Error("Report not found");
+    }
+
+    const report = reportCheck.rows[0];
+
+    if (report.status === "action_taken") {
+      throw new Error("Case already resolved");
+    }
+
+    // update status
     const result = await client.query(
       `
       UPDATE abuse_reports
-      SET status = $1
-      WHERE report_id = $2
-      RETURNING user_id, tracking_id
+      SET
+        status = 'action_taken'
+      WHERE report_id = $1
+      RETURNING *
       `,
-      [status, report_id]
+      [reportId]
     );
-
-    if (result.rows.length === 0) {
-      throw new Error("Invalid report_id");
-    }
-
-    const data = result.rows[0];
-
-    let message = "";
-
-    if (status === "under_review") {
-      message = `📋 Your abuse report (${data.tracking_id}) is under review`;
-    } else if (status === "action_taken") {
-      message = `✅ Action has been taken on your abuse report (${data.tracking_id})`;
-    } else if (status === "rejected") {
-      message = `❌ Your abuse report (${data.tracking_id}) was rejected`;
-    } else {
-      throw new Error("Invalid status value");
-    }
 
     await client.query("COMMIT");
 
-    // 🔥 NOTIFICATION (after commit)
+    // notification
     await createNotification({
-      user_id: data.user_id,
+      user_id: report.user_id,
       type: "abuse_report",
-      message,
+      message: `✅ Action has been taken on your abuse report (${report.tracking_id})`,
       source_type: "abuse_report",
-      source_id: report_id
+      source_id: reportId
+    });
+
+    return result.rows[0];
+
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+/* =========================================
+   DISMISS CASE
+========================================= */
+const dismissCase = async (reportId, ngoUserId) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // verify report exists
+    const reportCheck = await client.query(
+      `
+      SELECT report_id, user_id, tracking_id, status
+      FROM abuse_reports
+      WHERE report_id = $1
+      `,
+      [reportId]
+    );
+
+    if (reportCheck.rows.length === 0) {
+      throw new Error("Report not found");
+    }
+
+    const report = reportCheck.rows[0];
+
+    if (report.status === "rejected") {
+      throw new Error("Case already dismissed");
+    }
+
+    // update
+    const result = await client.query(
+      `
+      UPDATE abuse_reports
+      SET
+        status = 'rejected'
+      WHERE report_id = $1
+      RETURNING *
+      `,
+      [reportId]
+    );
+
+    await client.query("COMMIT");
+
+    // notification
+    await createNotification({
+      user_id: report.user_id,
+      type: "abuse_report",
+      message: `❌ Your abuse report (${report.tracking_id}) was dismissed`,
+      source_type: "abuse_report",
+      source_id: reportId
     });
 
     return result.rows[0];
@@ -204,7 +398,10 @@ const updateReportStatus = async (report_id, status) => {
 
 module.exports = {
   submitReport,
-  updateReportStatus,
   getUserReports,
-  getReportById
+  getReportById,
+  getNgoReports,
+  getReportByIdNgo,
+  acceptCase,
+  dismissCase,
 };
