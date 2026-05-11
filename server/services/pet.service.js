@@ -1,4 +1,5 @@
 const { pool } = require("../db");
+const auditService = require("./audit.service");
 
 /* =========================================
    GET ALL PETS (Dashboard)
@@ -33,13 +34,11 @@ const getAllPets = async (filters) => {
       u.name AS ngo_name,
 
       (
-        SELECT image_url
-        FROM listing_images li
-        JOIN adoption_listings al
-          ON al.listing_id = li.listing_id
-        WHERE al.pet_id = p.pet_id
+        SELECT json_agg(image_url)
+        FROM pet_images pi
+        WHERE pi.pet_id = p.pet_id
         LIMIT 1
-      ) AS image_url
+      ) AS images
 
     FROM pets p
 
@@ -217,13 +216,10 @@ const getPetById = async (id) => {
       u.name AS ngo_name,
 
       (
-        SELECT image_url
-        FROM listing_images li
-        JOIN adoption_listings al
-          ON al.listing_id = li.listing_id
-        WHERE al.pet_id = p.pet_id
-        LIMIT 1
-      ) AS image_url
+        SELECT json_agg(image_url)
+        FROM pet_images pi
+        WHERE pi.pet_id = p.pet_id
+      ) AS images
 
     FROM pets p
 
@@ -244,7 +240,268 @@ const getPetById = async (id) => {
   return result.rows[0];
 };
 
+const addPet = async (data, userId) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // =====================================================
+    // STEP 1: GET NGO ID FROM USER
+    // =====================================================
+    const ngoResult = await client.query(
+      `SELECT ngo_id FROM ngos WHERE user_id = $1`,
+      [userId]
+    );
+
+    if (ngoResult.rows.length === 0) {
+      throw new Error("NGO profile not found for this user");
+    }
+
+    const ngoId = ngoResult.rows[0].ngo_id;
+
+    // =====================================================
+    // STEP 2: GET PET TYPE ID
+    // =====================================================
+    const petTypeResult = await client.query(
+      `SELECT pet_type_id FROM pet_types WHERE LOWER(name) = LOWER($1)`,
+      [data.pet_type]
+    );
+
+    if (petTypeResult.rows.length === 0) {
+      throw new Error("Invalid pet type");
+    }
+
+    const petTypeId = petTypeResult.rows[0].pet_type_id;
+
+    // =====================================================
+    // STEP 3: INSERT PET
+    // =====================================================
+    const petResult = await client.query(
+      `
+      INSERT INTO pets
+      (
+        ngo_id,
+        name,
+        breed,
+        pet_type_id,
+        gender,
+        age,
+        city,
+        vaccination_status,
+        description,
+        status
+      )
+      VALUES
+      ($1,$2,$3,$4,$5,$6,$7,$8,$9,'available')
+      RETURNING *
+      `,
+      [
+        ngoId,
+        data.name,
+        data.breed,
+        petTypeId,
+        data.gender || null,
+        data.age,
+        data.city,
+        data.vaccination_status,
+        data.description,
+      ]
+    );
+
+    const pet = petResult.rows[0];
+
+    // =====================================================
+    // STEP 4: INSERT IMAGES
+    // =====================================================
+    if (data.images && data.images.length > 0) {
+      for (let img of data.images) {
+        await client.query(
+          `
+          INSERT INTO pet_images (pet_id, image_url)
+          VALUES ($1, $2)
+          `,
+          [pet.pet_id, img]
+        );
+      }
+    }
+
+    await client.query("COMMIT");
+
+    await auditService.createAuditLog({
+      admin_id: userId,
+      action: "PET_CREATED",
+      target_type: "pet",
+      target_id: pet.pet_id,
+      description: `Pet ${data.name} added by NGO ${ngoId}`,
+    });
+
+    return pet;
+
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+const getNgoPets = async (userId) => {
+  // 1. get ngo_id from user
+  const ngoResult = await pool.query(
+    `SELECT ngo_id FROM ngos WHERE user_id = $1`,
+    [userId]
+  );
+
+  if (ngoResult.rows.length === 0) {
+    throw new Error("NGO not found for this user");
+  }
+
+  const ngoId = ngoResult.rows[0].ngo_id;
+
+  // 2. fetch pets
+  const result = await pool.query(
+    `
+    SELECT
+      p.pet_id,
+      p.name,
+      p.breed,
+      p.gender,
+      p.age,
+      p.city,
+      p.vaccination_status,
+      p.description,
+      p.status,
+      p.created_at,
+
+      pt.name AS pet_type,
+
+      (
+        SELECT json_agg(image_url)
+        FROM pet_images pi
+        WHERE pi.pet_id = p.pet_id
+      ) AS images,
+
+      (
+        SELECT COUNT(*)
+        FROM adoption_listings al
+        WHERE al.pet_id = p.pet_id
+      ) AS total_listings
+
+    FROM pets p
+
+    LEFT JOIN pet_types pt
+      ON pt.pet_type_id = p.pet_type_id
+
+    WHERE p.ngo_id = $1
+
+    ORDER BY p.created_at DESC
+    `,
+    [ngoId]
+  );
+
+  return result.rows;
+};
+
+const updatePetPatch = async (userId, petId, data) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // 1. Get NGO
+    const ngoResult = await client.query(
+      `SELECT ngo_id FROM ngos WHERE user_id = $1`,
+      [userId]
+    );
+
+    if (ngoResult.rows.length === 0) {
+      throw new Error("NGO not found");
+    }
+
+    const ngoId = ngoResult.rows[0].ngo_id;
+
+    // 2. Verify ownership
+    const petCheck = await client.query(
+      `SELECT * FROM pets WHERE pet_id = $1 AND ngo_id = $2`,
+      [petId, ngoId]
+    );
+
+    if (petCheck.rows.length === 0) {
+      throw new Error("Pet not found or unauthorized");
+    }
+
+    const existing = petCheck.rows[0];
+
+    // 3. Build PATCH values
+    const updated = {
+      name: data.name ?? existing.name,
+      breed: data.breed ?? existing.breed,
+      age: data.age ?? existing.age,
+      city: data.city ?? existing.city,
+      vaccination_status: data.vaccination_status ?? existing.vaccination_status,
+      description: data.description ?? existing.description,
+      gender: data.gender ?? existing.gender,
+      status: data.status ?? existing.status,
+    };
+
+    // 4. Update query
+    const result = await client.query(
+      `
+      UPDATE pets
+      SET
+        name = $1,
+        breed = $2,
+        age = $3,
+        city = $4,
+        vaccination_status = $5,
+        description = $6,
+        gender = $7,
+        status = $8,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE pet_id = $9
+      RETURNING *
+      `,
+      [
+        updated.name,
+        updated.breed,
+        updated.age,
+        updated.city,
+        updated.vaccination_status,
+        updated.description,
+        updated.gender,
+        updated.status,
+        petId,
+      ]
+    );
+
+    const updatedPet = result.rows[0];
+
+    // 5. Audit log
+    await auditService.createAuditLog({
+      admin_id: userId,
+      action: "PET_UPDATED",
+      target_type: "pet",
+      target_id: petId,
+      description: `Pet ${petId} updated by NGO ${ngoId}`,
+    });
+
+    await client.query("COMMIT");
+
+    return updatedPet;
+
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   getAllPets,
   getPetById,
+  addPet,
+  getNgoPets,
+  updatePetPatch,
 };

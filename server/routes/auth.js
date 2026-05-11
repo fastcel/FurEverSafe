@@ -12,7 +12,11 @@ const auditService = require("../services/audit.service");
 router.post("/signup", async (req, res) => {
   console.log("🔥 REQUEST HIT /signup");
 
+  const client = await pool.connect();
+
   try {
+    await client.query("BEGIN");
+
     const { name, email, contact, password, role } = req.body;
 
     if (!name || !email || !contact || !password || !role) {
@@ -27,7 +31,7 @@ router.post("/signup", async (req, res) => {
       });
     }
 
-    const emailCheck = await pool.query(
+    const emailCheck = await client.query(
       "SELECT * FROM users WHERE email = $1",
       [email]
     );
@@ -40,33 +44,57 @@ router.post("/signup", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const result = await pool.query(
+    // =====================================================
+    // STEP 1: CREATE USER
+    // =====================================================
+    const result = await client.query(
       `INSERT INTO users (name, email, contact_number, password_hash, role)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING user_id`,
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING user_id`,
       [name, email, contact, hashedPassword, role]
     );
 
     const newUserId = result.rows[0].user_id;
 
+    // =====================================================
+    // STEP 2: IF NGO → CREATE NGO ENTRY
+    // =====================================================
+    if (role === "ngo") {
+      await client.query(
+        `INSERT INTO ngos (user_id, organization_name, verified)
+         VALUES ($1, $2, false)`,
+        [newUserId, name] // you can replace with org name later
+      );
+    }
+
+    // =====================================================
+    // STEP 3: AUDIT LOG
+    // =====================================================
     await auditService.createAuditLog({
       admin_id: newUserId,
       action: "SIGNUP",
       target_type: "user",
       target_id: newUserId,
-      description: `New user registered: ${email}`,
+      description: `New ${role} registered: ${email}`,
     });
+
+    await client.query("COMMIT");
 
     return res.status(201).json({
       message: "Account created successfully",
     });
 
   } catch (err) {
+    await client.query("ROLLBACK");
+
     console.log("❌ SIGNUP ERROR:", err);
 
     return res.status(500).json({
       error: "Something went wrong during signup",
     });
+
+  } finally {
+    client.release();
   }
 });
 
