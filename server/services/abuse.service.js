@@ -1,8 +1,6 @@
-const { discriminatedUnion } = require("zod");
 const { pool } = require("../db");
 const { createNotification } = require("./notification.service");
 const { addReward } = require("./reward.service");
-
 
 
 const submitReport = async (data) => {
@@ -297,8 +295,11 @@ const acceptCase = async (reportId, ngoUserId) => {
 
     const report = reportCheck.rows[0];
 
-    if (report.status === "action_taken") {
-      throw new Error("Case already resolved");
+    if (
+      report.status === "action_taken" ||
+      report.status === "rejected"
+    ) {
+      throw new Error("Case already finalized");
     }
 
     // update status
@@ -359,8 +360,11 @@ const dismissCase = async (reportId, ngoUserId) => {
 
     const report = reportCheck.rows[0];
 
-    if (report.status === "rejected") {
-      throw new Error("Case already dismissed");
+    if (
+      report.status === "action_taken" ||
+      report.status === "rejected"
+    ) {
+      throw new Error("Case already finalized");
     }
 
     // update

@@ -6,11 +6,8 @@ const jwt = require("jsonwebtoken");
 const { pool } = require("../db");
 const auditService = require("../services/audit.service");
 
-/* ======================================================
-   SIGNUP
-====================================================== */
 router.post("/signup", async (req, res) => {
-  console.log("🔥 REQUEST HIT /signup");
+  console.log("REQUEST HIT /signup");
 
   const client = await pool.connect();
 
@@ -42,11 +39,30 @@ router.post("/signup", async (req, res) => {
       });
     }
 
+    const usernameCheck = await client.query(
+      "SELECT 1 FROM users WHERE name = $1",
+      [name]
+    );
+
+    if (usernameCheck.rows.length > 0) {
+      return res.status(409).json({
+        error: "Username already taken",
+      });
+    }
+
+    const contactCheck = await client.query(
+      "SELECT 1 FROM users WHERE contact_number = $1",
+      [contact]
+    );
+
+    if (contactCheck.rows.length > 0) {
+      return res.status(409).json({
+        error: "Contact number already registered",
+      });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // =====================================================
-    // STEP 1: CREATE USER
-    // =====================================================
     const result = await client.query(
       `INSERT INTO users (name, email, contact_number, password_hash, role)
        VALUES ($1, $2, $3, $4, $5)
@@ -56,20 +72,14 @@ router.post("/signup", async (req, res) => {
 
     const newUserId = result.rows[0].user_id;
 
-    // =====================================================
-    // STEP 2: IF NGO → CREATE NGO ENTRY
-    // =====================================================
     if (role === "ngo") {
       await client.query(
         `INSERT INTO ngos (user_id, organization_name, verified)
          VALUES ($1, $2, false)`,
-        [newUserId, name] // you can replace with org name later
+        [newUserId, name]
       );
     }
 
-    // =====================================================
-    // STEP 3: AUDIT LOG
-    // =====================================================
     await auditService.createAuditLog({
       admin_id: newUserId,
       action: "SIGNUP",
@@ -87,7 +97,7 @@ router.post("/signup", async (req, res) => {
   } catch (err) {
     await client.query("ROLLBACK");
 
-    console.log("❌ SIGNUP ERROR:", err);
+    console.log("SIGNUP ERROR:", err);
 
     return res.status(500).json({
       error: "Something went wrong during signup",
@@ -98,11 +108,8 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-/* ======================================================
-   LOGIN
-====================================================== */
 router.post("/login", async (req, res) => {
-  console.log("🔥 REQUEST HIT /login");
+  console.log("REQUEST HIT /login");
 
   try {
     const { username, password } = req.body;
@@ -171,7 +178,7 @@ router.post("/login", async (req, res) => {
     });
 
   } catch (err) {
-    console.log("❌ LOGIN ERROR:", err);
+    console.log("LOGIN ERROR:", err);
 
     return res.status(500).json({
       error: "Something went wrong during login",
