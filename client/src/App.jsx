@@ -3,7 +3,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import UserNotifications from "./pages/UserNotifications";
-import CitizenDashboard from "./pages/CitizenDashboard";
+import CitizenDashboard from "./pages/Citizen/CitizenDashboard";
+import AdoptionForm from "./pages/Citizen/AdoptionForm";
+import AdoptionsPage from "./pages/Citizen/AdoptionsPage";
+import NGODashboard from "./pages/ngo/NGODashboard";
+import NGOAdoptions from "./pages/ngo/NGOAdoptions";
 import UserProfile from "./pages/UserProfile";
 import EditProfile from "./pages/EditProfile";
 import DeleteAccount from "./pages/DeleteAccount";
@@ -26,7 +30,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Signup />} />
+        <Route path="/dashboard" element={<CitizenDashboard />} />
+        <Route path="/adopt/:petName" element={<AdoptionForm />} />
+        <Route path="/adoptions" element={<AdoptionsPage />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
         <Route path="/help-and-support" element={<HelpAndSupport />} />
@@ -57,6 +63,10 @@ export default function App() {
           path="/ngo-abuse-reports/:id"
           element={<NGOAbuseReportDetails />}
         />
+
+        {/* NGO Dashboard */}
+        <Route path="/ngo-dashboard" element={<NGODashboard />} />
+        <Route path="/ngo-adoptions" element={<NGOAdoptions />} />
         <Route path="/ngo-notifications/" element={<NGONotifications />} />
       </Routes>
     </BrowserRouter>
