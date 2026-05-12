@@ -62,7 +62,8 @@ const submitReport = async (data) => {
       user_id: data.user_id,
       points: 30,
       source_type: "abuse_report",
-      source_id: report.report_id
+      source_id: report.report_id,
+      reward_type: "abuse_report" 
     });
 
     await createNotification({

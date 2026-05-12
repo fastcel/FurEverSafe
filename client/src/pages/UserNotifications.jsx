@@ -19,6 +19,7 @@ export default function UserNotifications() {
   const [notifications, setNotifications] = useState([]);
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [milestones, setMilestones] = useState(null);
 
 
   useEffect(() => {
@@ -38,6 +39,11 @@ export default function UserNotifications() {
           headers: { Authorization: `Bearer ${token}` }
         });
         setReports(reportsRes.data);
+
+        const milestonesRes = await axios.get(`http://localhost:5000/api/milestones`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setMilestones(milestonesRes.data);
 
       } catch (err) {
         console.error("Initialization Error:", err);
@@ -91,16 +97,25 @@ export default function UserNotifications() {
     </div>
   );
 
-  const renderMilestones = () => (
+  
+  const renderMilestones = () => {
+  if (!milestones) return <p className="font-bold text-center">Loading milestones...</p>;
+
+  const { totalPoints, breakdown, badges } = milestones;
+  const silverProgress = Math.min((totalPoints / 250) * 100, 100);
+  const goldProgress = Math.min((totalPoints / 400) * 100, 100);
+
+  return (
     <div className="space-y-8 mt-6 w-full mx-auto">
       <p className="italic text-[#4a3f35] font-bold text-xl">Earn points by adopting pets and reporting abuse. Collect badges as you go!</p>
 
       {/* Stats Cards */}
       <div className="flex justify-between gap-6">
         {[
-          { label: "Total Points", value: 190 },
-          { label: "Pets Adopted", value: 2 },
-          { label: "Reports Submitted", value: reports.length } // Using real length
+          { label: "Total Points", value: totalPoints },
+          { label: "Pets Adopted", value: breakdown.adoptions.count },
+          { label: "Reports Submitted", value: breakdown.abuseReports.count }
+          
         ].map((stat) => (
           <div key={stat.label} className="flex-1 bg-[#dcd3c1] p-8 rounded-xl text-center border-[3px] border-black shadow-sm">
             <p className="text-5xl font-black text-primary mb-1">{stat.value}</p>
@@ -109,79 +124,74 @@ export default function UserNotifications() {
         ))}
       </div>
 
-      {/* Badges Section */}
+      {/* Badges */}
       <div>
         <h3 className="text-3xl font-black text-primary mb-6">Badges</h3>
         <div className="grid grid-cols-3 gap-6">
           {/* Bronze */}
-          <div
-            className="bg-[#b3f2c5] p-8 rounded-xl text-center relative border-[3px] border-black shadow-sm cursor-pointer hover:bg-[#9ee2b2] transition-all"
-            onClick={() => showAlert("You've unlocked the Bronze badge!")}
-          >
-            <CheckCircleIcon className="absolute top-3 right-3 text-success scale-125" />
-            <div className="text-6xl mb-3">🥉</div>
+          <div className={`p-8 rounded-xl text-center relative border-[3px] border-black shadow-sm cursor-pointer transition-all ${badges.bronze ? 'bg-[#b3f2c5] hover:bg-[#9ee2b2]' : 'bg-[#dcd3c1] opacity-60'}`}>
+            {badges.bronze ? <CheckCircleIcon className="absolute top-3 right-3 text-success scale-125" /> : <LockIcon className="absolute top-3 right-3 text-[#4a3f35] scale-125" />}
+            <div className={`text-6xl mb-3 ${!badges.bronze ? 'grayscale opacity-50' : ''}`}>🥉</div>
             <p className="text-2xl font-black text-[#c16e3e]">Bronze</p>
-            <p className="text-success font-black text-lg">Earned at 100 pts</p>
+            <p className={`font-black text-lg ${badges.bronze ? 'text-success' : 'text-primary'}`}>{badges.bronze ? 'Earned at 100 pts' : `${100 - totalPoints} pts to go`}</p>
           </div>
+
           {/* Silver */}
-          <div
-            className="bg-[#dcd3c1] p-8 rounded-xl text-center relative opacity-80 border-[3px] border-black shadow-sm cursor-pointer hover:opacity-100 transition-all"
-            onClick={() => showAlert("Action not possible: Silver badge is still locked.")}
-          >
-            <LockIcon className="absolute top-3 right-3 text-[#4a3f35] scale-125" />
-            <div className="text-6xl mb-3 grayscale opacity-50">🥈</div>
+          <div className={`p-8 rounded-xl text-center relative border-[3px] border-black shadow-sm cursor-pointer transition-all ${badges.silver ? 'bg-[#b3f2c5]' : 'bg-[#dcd3c1] opacity-80'}`}>
+            {badges.silver ? <CheckCircleIcon className="absolute top-3 right-3 text-success scale-125" /> : <LockIcon className="absolute top-3 right-3 text-[#4a3f35] scale-125" />}
+            <div className={`text-6xl mb-3 ${!badges.silver ? 'grayscale opacity-50' : ''}`}>🥈</div>
             <p className="text-2xl font-black text-gray-500">Silver</p>
-            <p className="text-primary font-black text-lg">250 pts - 60 to go</p>
-            <div className="w-full h-4 bg-gray-300 rounded-full mt-4 border-[2px] border-black overflow-hidden">
-              <div className="bg-success h-full" style={{ width: '76%' }}></div>
-            </div>
+            <p className="text-primary font-black text-lg">{badges.silver ? 'Earned!' : `${250 - totalPoints} pts to go`}</p>
+            {!badges.silver && (
+              <div className="w-full h-4 bg-gray-300 rounded-full mt-4 border-[2px] border-black overflow-hidden">
+                <div className="bg-success h-full" style={{ width: `${silverProgress}%` }}></div>
+              </div>
+            )}
           </div>
+
           {/* Gold */}
-          <div
-            className="bg-[#dcd3c1] p-8 rounded-xl text-center relative opacity-60 border-[3px] border-black shadow-sm cursor-pointer hover:opacity-80 transition-all"
-            onClick={() => showAlert("Action not possible: Gold badge is still locked.")}
-          >
-            <LockIcon className="absolute top-3 right-3 text-[#4a3f35] scale-125" />
-            <div className="text-6xl mb-3 grayscale opacity-30">🥇</div>
-            <p className="text-2xl font-black text-yellow-600 opacity-50">Gold</p>
-            <div className="w-full h-4 bg-gray-300 rounded-full mt-4 border-[2px] border-black overflow-hidden">
-              <div className="bg-success h-full opacity-50" style={{ width: '10%' }}></div>
-            </div>
+          <div className={`p-8 rounded-xl text-center relative border-[3px] border-black shadow-sm cursor-pointer transition-all ${badges.gold ? 'bg-[#b3f2c5]' : 'bg-[#dcd3c1] opacity-60'}`}>
+            {badges.gold ? <CheckCircleIcon className="absolute top-3 right-3 text-success scale-125" /> : <LockIcon className="absolute top-3 right-3 text-[#4a3f35] scale-125" />}
+            <div className={`text-6xl mb-3 ${!badges.gold ? 'grayscale opacity-30' : ''}`}>🥇</div>
+            <p className="text-2xl font-black text-yellow-600">Gold</p>
+            <p className="text-primary font-black text-lg">{badges.gold ? 'Earned!' : `${400 - totalPoints} pts to go`}</p>
+            {!badges.gold && (
+              <div className="w-full h-4 bg-gray-300 rounded-full mt-4 border-[2px] border-black overflow-hidden">
+                <div className="bg-success h-full opacity-50" style={{ width: `${goldProgress}%` }}></div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* How to Earn Points Section */}
+      {/* How to Earn Points */}
       <div>
         <h3 className="text-3xl font-black text-primary mb-6">How to Earn Points?</h3>
         <div className="space-y-6">
-          <div
-            className="bg-[#dcd3c1] p-6 rounded-xl border-[3px] border-black shadow-sm cursor-pointer hover:bg-[#cec3ad] transition-all"
-          >
+          <div className="bg-[#dcd3c1] p-6 rounded-xl border-[3px] border-black shadow-sm">
             <div className="flex justify-between font-black text-[#4a3f35] mb-3 text-xl">
               <span>Pet Adoptions (50 pts each)</span>
-              <span className="text-primary">100 pts earned</span>
+              <span className="text-primary">{breakdown.adoptions.points} pts earned</span>
             </div>
             <div className="w-full h-6 bg-gray-300 rounded-full border-[2px] border-black overflow-hidden">
-              <div className="bg-primary h-full" style={{ width: '60%' }}></div>
+              <div className="bg-primary h-full" style={{ width: `${Math.min((breakdown.adoptions.points / 400) * 100, 100)}%` }}></div>
             </div>
           </div>
 
-          <div
-            className="bg-[#dcd3c1] p-6 rounded-xl border-[3px] border-black shadow-sm cursor-pointer hover:bg-[#cec3ad] transition-all"
-          >
+          <div className="bg-[#dcd3c1] p-6 rounded-xl border-[3px] border-black shadow-sm">
             <div className="flex justify-between font-black text-[#4a3f35] mb-3 text-xl">
               <span>Abuse Reports (30 pts each)</span>
-              <span className="text-primary">60 pts earned</span>
+              <span className="text-primary">{breakdown.abuseReports.points} pts earned</span>
             </div>
             <div className="w-full h-6 bg-gray-300 rounded-full border-[2px] border-black overflow-hidden">
-              <div className="bg-[#4fb9ff] h-full" style={{ width: '65%' }}></div>
+              <div className="bg-[#4fb9ff] h-full" style={{ width: `${Math.min((breakdown.abuseReports.points / 400) * 100, 100)}%` }}></div>
             </div>
           </div>
         </div>
       </div>
     </div>
   );
+};
 
   const renderReportsList = () => (
     <div className="space-y-5 mt-6 w-full mx-auto">
@@ -272,23 +282,44 @@ export default function UserNotifications() {
             <div className="space-y-8 relative">
               <div className="absolute left-4 top-3 bottom-3 w-0.5 bg-black opacity-30"></div>
 
-              {[
-                { label: "Report Submitted", date: new Date(selectedReport.created_at).toLocaleDateString(), done: true },
-                { label: "Under Review", date: selectedReport.status !== 'pending' ? 'Completed' : '--', done: selectedReport.status !== 'pending' },
-                { label: "Action Taken", date: selectedReport.status === 'action_taken' ? 'Finalized' : '--', done: selectedReport.status === 'action_taken', step: 3 }
-              ].map((step, idx) => (
-                <div key={idx} className="flex items-center justify-between relative z-10">
-                  <div className="flex items-center gap-5">
-                    {step.done ? (
-                      <div className="bg-success text-white rounded-full p-1.5 border-[2px] border-black"><CheckCircleIcon /></div>
-                    ) : (
-                      <div className="bg-gray-300 text-black rounded-full w-9 h-9 flex items-center justify-center font-black border-[2px] border-black">{step.step || idx + 1}</div>
-                    )}
-                    <span className={`font-black text-xl ${step.done ? 'text-primary' : 'text-gray-400'}`}>{step.label}</span>
+           {[
+            { 
+              label: "Report Submitted", 
+              date: new Date(selectedReport.created_at).toLocaleDateString(), 
+              done: true 
+            },
+            { 
+              label: "Under Review", 
+              date: ['under_review', 'action_taken', 'rejected'].includes(selectedReport.status) ? 'Completed' : '--', 
+              done: ['under_review', 'action_taken', 'rejected'].includes(selectedReport.status)
+            },
+            { 
+              label: selectedReport.status === 'rejected' ? 'Case Dismissed' : 'Action Taken', 
+              date: selectedReport.status === 'action_taken' ? 'Finalized' : 
+                    selectedReport.status === 'rejected' ? 'Dismissed' : '--', 
+              done: selectedReport.status === 'action_taken' || selectedReport.status === 'rejected',
+              isRejected: selectedReport.status === 'rejected',
+              step: 3 
+            }
+          ].map((step, idx) => (
+            <div key={idx} className="flex items-center justify-between relative z-10">
+              <div className="flex items-center gap-5">
+                {step.done ? (
+                  <div className={`${step.isRejected ? 'bg-red-500' : 'bg-success'} text-white rounded-full p-1.5 border-[2px] border-black`}>
+                    <CheckCircleIcon />
                   </div>
-                  <span className="text-gray-700 font-black text-lg">{step.date}</span>
-                </div>
-              ))}
+                ) : (
+                  <div className="bg-gray-300 text-black rounded-full w-9 h-9 flex items-center justify-center font-black border-[2px] border-black">
+                    {step.step || idx + 1}
+                  </div>
+                )}
+                <span className={`font-black text-xl ${step.done ? (step.isRejected ? 'text-red-500' : 'text-primary') : 'text-gray-400'}`}>
+                  {step.label}
+                </span>
+              </div>
+              <span className="text-gray-700 font-black text-lg">{step.date}</span>
+            </div>
+          ))}
             </div>
           </div>
         </div>
@@ -320,10 +351,13 @@ export default function UserNotifications() {
         </div>
 
         {loading ? (
-          <h1 className="text-3xl font-black animate-pulse">Loading dashboard...</h1>
+           <h1 className="text-3xl font-black animate-pulse">Loading Notifications...</h1>
+     
         ) : (
           <>
-            <h1 className="text-5xl font-black text-purple-900 mb-4">{activeTab}</h1>
+            <h1 className="text-4xl font-black text-primary mb-4">
+            {activeTab}
+          </h1>
             {activeTab === "Notifications" && renderNotifications()}
             {activeTab === "Milestones" && renderMilestones()}
             {activeTab === "My Reports" && (selectedReport ? renderReportDetails() : renderReportsList())}
