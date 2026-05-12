@@ -41,12 +41,7 @@ export default function App() {
         <Route path="/adoptions" element={<AdoptionsPage />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/" element={<Login />} />
-        <Route path="/help-and-support" element={<HelpAndSupport />} />
-        {/* Citizen Dashboard */}
         <Route path="/citizen-dashboard" element={<CitizenDashboard />} />
-        <Route path="/faq" element={<FAQ />} />
-        {/* User Profile Flow */}
-
         <Route path="/profile" element={<UserProfile role={getRole()} />} />
         <Route
           path="/edit-profile"

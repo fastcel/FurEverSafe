@@ -538,10 +538,54 @@ const updatePetPatch = async (userId, petId, data) => {
   }
 };
 
+const getUserAppliedPets = async (userId) => {
+  const result = await pool.query(
+    `
+    SELECT
+      p.pet_id,
+      p.name,
+      p.breed,
+      p.age,
+      p.city,
+      p.status,
+
+      pt.name AS pet_type,
+
+      COALESCE(
+        (
+          SELECT json_agg(pi.image_url)
+          FROM pet_images pi
+          WHERE pi.pet_id = p.pet_id
+        ),
+        '[]'
+      ) AS images
+
+    FROM adoption_applications aa
+
+    JOIN adoption_listings al
+      ON al.listing_id = aa.listing_id
+
+    JOIN pets p
+      ON p.pet_id = al.pet_id
+
+    LEFT JOIN pet_types pt
+      ON pt.pet_type_id = p.pet_type_id
+
+    WHERE aa.user_id = $1
+
+    ORDER BY aa.created_at DESC
+    `,
+    [userId]
+  );
+
+  return result.rows;
+};
+
 module.exports = {
   getAllPets,
   getPetById,
   addPet,
   getNgoPets,
   updatePetPatch,
+  getUserAppliedPets,
 };

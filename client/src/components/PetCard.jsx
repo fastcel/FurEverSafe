@@ -13,17 +13,18 @@ const PetCard = ({
   onClick,
   isAdmin,
   onEdit,
+  isApplied,
 }) => {
   const navigate = useNavigate();
 
   const handleButtonClick = (e) => {
-    e.stopPropagation(); // Prevents the card's main click (opening the info modal)
+    e.stopPropagation();
+
+    if (isApplied) return; // 👈 BLOCK ACTION
 
     if (isAdmin) {
-      // If it's an NGO user, trigger the edit function
       if (onEdit) onEdit();
     } else {
-      // If it's a Citizen, go to the adoption form
       navigate(`/adopt/${listing_id}`);
     }
   };
@@ -47,10 +48,16 @@ const PetCard = ({
 
       <button
         onClick={handleButtonClick}
-        className="w-full mt-3 bg-[#C2185B] text-white py-1.5 rounded-sm font-bold border border-black hover:bg-[#a3154d] transition-all"
+        disabled={isApplied}
+        className={`w-full mt-3 py-1.5 rounded-sm font-bold border border-black transition-all
+    ${
+      isApplied
+        ? "bg-gray-500 cursor-not-allowed"
+        : "bg-[#C2185B] hover:bg-[#a3154d] text-white"
+    }
+  `}
       >
-        {/* DYNAMIC TEXT BASED ON PROP */}
-        {isAdmin ? "Edit" : "Adopt"}
+        {isApplied ? "Already Applied" : isAdmin ? "Edit" : "Adopt"}
       </button>
     </div>
   );

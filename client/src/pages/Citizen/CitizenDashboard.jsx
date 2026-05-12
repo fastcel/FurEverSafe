@@ -63,6 +63,31 @@ export default function CitizenDashboard() {
     },
   ]);
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [appliedPets, setAppliedPets] = useState([]);
+  const appliedPetSet = new Set(appliedPets.map((p) => p.pet_id));
+
+  useEffect(() => {
+    const fetchAppliedPets = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const res = await axios.get(
+          "http://localhost:5000/api/pets/user/applied",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+        console.log(res.data);
+        setAppliedPets(res.data.pets || []);
+      } catch (err) {
+        console.error("Failed to fetch applied pets:", err);
+      }
+    };
+
+    fetchAppliedPets();
+  }, []);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -224,7 +249,12 @@ export default function CitizenDashboard() {
                           key={pet.pet_id || pet.id}
                           {...pet}
                           image={pet.images?.[0] || ""}
-                          onClick={() => setSelectedPet(pet)}
+                          onClick={() => {
+                            if (appliedPetSet.has(pet.pet_id)) return;
+                            setSelectedPet(pet);
+                          }}
+                          disabled={appliedPetSet.has(pet.pet_id)}
+                          isApplied={appliedPetSet.has(pet.pet_id)}
                         />
                       ))}
                     </div>
