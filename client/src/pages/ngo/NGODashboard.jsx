@@ -3,7 +3,6 @@ import axios from 'axios';
 import Layout from '../../components/Layout';
 import PetCard from '../../components/PetCard';
 import PetFormModal from '../../components/PetFormModal';
-import SortDropdown from '../../components/SortDropdown';
 import EditPetModal from '../../components/EditPetModal';
 
 const API_BASE = 'http://localhost:5000/api/pets';
@@ -62,25 +61,9 @@ function mapRowToPet(row) {
     };
 }
 
-function sortRows(rows, sortLabel) {
-    const arr = [...rows];
-    const byDate = (a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0);
-    switch (sortLabel) {
-        case 'Oldest First':
-            return arr.sort(byDate);
-        case 'Alphebetical':
-            return arr.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
-        case 'Closest':
-            return arr;
-        case 'Newest First':
-        default:
-            return arr.sort((a, b) => -byDate(a, b));
-    }
-}
 
 export default function NGODashboard() {
     const [showForm, setShowForm] = useState(false);
-    const [showSort, setShowSort] = useState(false);
     const [showFilter, setShowFilter] = useState(false);
     const [editingPet, setEditingPet] = useState(null);
 
@@ -88,7 +71,6 @@ export default function NGODashboard() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [sortLabel, setSortLabel] = useState('Newest First');
     const [typeFilter, setTypeFilter] = useState(null);
 
     const loadPets = useCallback(async () => {
@@ -143,8 +125,8 @@ export default function NGODashboard() {
                 (row) => (row.pet_type || '').toLowerCase() === typeFilter.toLowerCase()
             );
         }
-        return sortRows(list, sortLabel);
-    }, [rows, searchQuery, typeFilter, sortLabel]);
+        return list;
+    }, [rows, searchQuery, typeFilter]);
 
     const groupedPets = useMemo(() => {
         const map = new Map();
@@ -186,7 +168,7 @@ export default function NGODashboard() {
 
     return (
         <Layout>
-            <div className="w-full relative min-h-screen">
+            <div className="w-full min-h-screen p-8 bg-[#F5F1E3]">
                 {showForm && <PetFormModal onClose={closeForm} />}
 
                 {editingPet && (
@@ -210,31 +192,12 @@ export default function NGODashboard() {
                         />
                     </div>
 
-                    <div className="relative">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setShowSort(!showSort);
-                                setShowFilter(false);
-                            }}
-                            className="bg-[#C2185B] text-white px-8 py-1 rounded-sm font-bold border-2 border-black"
-                        >
-                            Sort
-                        </button>
-                        {showSort && (
-                            <SortDropdown
-                                onClose={() => setShowSort(false)}
-                                onSelect={setSortLabel}
-                            />
-                        )}
-                    </div>
 
                     <div className="relative">
                         <button
                             type="button"
                             onClick={() => {
                                 setShowFilter(!showFilter);
-                                setShowSort(false);
                             }}
                             className="bg-[#C2185B] text-white px-8 py-1 rounded-sm font-bold border-2 border-black"
                         >
@@ -290,22 +253,24 @@ export default function NGODashboard() {
                                 key={typeName}
                                 className={idx > 0 ? 'pt-6 border-t border-gray-300' : ''}
                             >
-                                <h2 className="text-xl font-bold mb-4 text-[#2D2D2D]">{typeName}</h2>
-                                <div className="flex flex-wrap gap-8">
+                                <h2 className="text-3xl font-black mb-8 text-[#3A1D44] capitalize">{typeName}</h2>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                     {pets.map((pet) => (
                                         <PetCard
-                                            key={pet.pet_id}
-                                            name={pet.name}
-                                            age={pet.age}
-                                            gender={pet.gender}
-                                            breed={pet.breed}
-                                            location={pet.location}
-                                            image={pet.image}
-                                            isAdmin={true}
-                                            onEdit={() => setEditingPet(pet)}
+                                        key={pet.pet_id}
+                                        pet_id={pet.pet_id}
+                                        name={pet.name}
+                                        age={pet.age}
+                                        gender={pet.gender}
+                                        breed={pet.breed}
+                                        city={pet.location} // Ensure this maps to 'city' prop in PetCard
+                                        image={pet.image}
+                                        isAdmin={true}
+                                        onEdit={() => setEditingPet(pet)}
+                                        onClick={() => setEditingPet(pet)} // Clicking the card opens the edit modal
                                         />
                                     ))}
-                                </div>
+                                    </div>
                             </section>
                         ))
                     )}
