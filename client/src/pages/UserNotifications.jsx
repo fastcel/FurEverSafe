@@ -282,23 +282,44 @@ useEffect(() => {
             <div className="space-y-8 relative">
               <div className="absolute left-4 top-3 bottom-3 w-0.5 bg-black opacity-30"></div>
 
-              {[
-                { label: "Report Submitted", date: new Date(selectedReport.created_at).toLocaleDateString(), done: true },
-                { label: "Under Review", date: selectedReport.status !== 'pending' ? 'Completed' : '--', done: selectedReport.status !== 'pending' },
-                { label: "Action Taken", date: selectedReport.status === 'action_taken' ? 'Finalized' : '--', done: selectedReport.status === 'action_taken', step: 3 }
-              ].map((step, idx) => (
-                <div key={idx} className="flex items-center justify-between relative z-10">
-                  <div className="flex items-center gap-5">
-                    {step.done ? (
-                      <div className="bg-success text-white rounded-full p-1.5 border-[2px] border-black"><CheckCircleIcon /></div>
-                    ) : (
-                      <div className="bg-gray-300 text-black rounded-full w-9 h-9 flex items-center justify-center font-black border-[2px] border-black">{step.step || idx+1}</div>
-                    )}
-                    <span className={`font-black text-xl ${step.done ? 'text-primary' : 'text-gray-400'}`}>{step.label}</span>
+                        {[
+            { 
+              label: "Report Submitted", 
+              date: new Date(selectedReport.created_at).toLocaleDateString(), 
+              done: true 
+            },
+            { 
+              label: "Under Review", 
+              date: ['under_review', 'action_taken', 'rejected'].includes(selectedReport.status) ? 'Completed' : '--', 
+              done: ['under_review', 'action_taken', 'rejected'].includes(selectedReport.status)
+            },
+            { 
+              label: selectedReport.status === 'rejected' ? 'Case Dismissed' : 'Action Taken', 
+              date: selectedReport.status === 'action_taken' ? 'Finalized' : 
+                    selectedReport.status === 'rejected' ? 'Dismissed' : '--', 
+              done: selectedReport.status === 'action_taken' || selectedReport.status === 'rejected',
+              isRejected: selectedReport.status === 'rejected',
+              step: 3 
+            }
+          ].map((step, idx) => (
+            <div key={idx} className="flex items-center justify-between relative z-10">
+              <div className="flex items-center gap-5">
+                {step.done ? (
+                  <div className={`${step.isRejected ? 'bg-red-500' : 'bg-success'} text-white rounded-full p-1.5 border-[2px] border-black`}>
+                    <CheckCircleIcon />
                   </div>
-                  <span className="text-gray-700 font-black text-lg">{step.date}</span>
-                </div>
-              ))}
+                ) : (
+                  <div className="bg-gray-300 text-black rounded-full w-9 h-9 flex items-center justify-center font-black border-[2px] border-black">
+                    {step.step || idx + 1}
+                  </div>
+                )}
+                <span className={`font-black text-xl ${step.done ? (step.isRejected ? 'text-red-500' : 'text-primary') : 'text-gray-400'}`}>
+                  {step.label}
+                </span>
+              </div>
+              <span className="text-gray-700 font-black text-lg">{step.date}</span>
+            </div>
+          ))}
             </div>
           </div>
         </div>
