@@ -48,4 +48,10 @@ router.patch(
   adoptionController.rejectApplication
 );
 
+router.patch(
+  "/my-applications/:id/cancel",
+  authenticate,
+  adoptionController.cancelApplication
+);
+
 module.exports = router;
