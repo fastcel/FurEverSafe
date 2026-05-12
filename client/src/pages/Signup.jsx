@@ -14,9 +14,8 @@ export default function SignupPage() {
     password: "",
     confirmPassword: "",
   });
-  
 
-  const [errors, setErrors] = useState({}); 
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
@@ -24,45 +23,44 @@ export default function SignupPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  
   const handleSubmit = async () => {
-  setErrors({});
-  setLoading(true);
+    setErrors({});
+    setLoading(true);
 
-  try {
-    const res = await axios.post("http://localhost:5000/api/auth/signup", {
-      name: form.name,
-      email: form.email,
-      contact: form.contact,
-      password: form.password,
-      role,
-    });
+    try {
+      const res = await axios.post("http://localhost:5000/api/auth/signup", {
+        name: form.name,
+        email: form.email,
+        contact: form.contact,
+        password: form.password,
+        role,
+      });
 
-    // optional: store token if backend returns it
-    // localStorage.setItem("token", res.data.token);
+      // optional: store token if backend returns it
+      // localStorage.setItem("token", res.data.token);
 
-    // redirect based on role
-    if (role === "citizen") {
-      navigate("/dashboard");
-    } else {
-      navigate("/ngo-dashboard");
+      // redirect based on role
+      if (role === "citizen") {
+        navigate("/citizen-dashboard");
+      } else if (role === "ngo") {
+        navigate("/ngo-dashboard");
+      } else if (role === "admin") {
+        navigate("/admin/users");
+      }
+    } catch (err) {
+      const message = err.response?.data?.error;
+
+      if (message === "Email already exists") {
+        setErrors({ email: message });
+      } else if (message === "Username already exists") {
+        setErrors({ name: message });
+      } else {
+        setErrors({ general: message || "Server error" });
+      }
+    } finally {
+      setLoading(false);
     }
-
-  } catch (err) {
-    const message = err.response?.data?.error;
-
-    if (message === "Email already exists") {
-      setErrors({ email: message });
-    } else if (message === "Username already exists") {
-      setErrors({ name: message });
-    } else {
-      setErrors({ general: message || "Server error" });
-    }
-
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="flex h-screen w-screen overflow-hidden">
@@ -192,13 +190,13 @@ export default function SignupPage() {
           </div>
 
           <button
-          onClick={handleSubmit}
-          disabled={loading}
-          className={`w-full font-bold py-2.5 rounded-xl text-white transition
+            onClick={handleSubmit}
+            disabled={loading}
+            className={`w-full font-bold py-2.5 rounded-xl text-white transition
             ${loading ? "bg-gray-400" : "bg-[#d94f8a] hover:bg-[#c43f7a]"}`}
-        >
-          {loading ? "Signing Up..." : "Create Account"}
-        </button>
+          >
+            {loading ? "Signing Up..." : "Create Account"}
+          </button>
 
           {/* LOGIN */}
           <p className="text-center text-sm text-gray-500 mt-4">
