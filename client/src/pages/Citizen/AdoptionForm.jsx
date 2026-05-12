@@ -22,13 +22,13 @@ export default function AdoptionForm() {
     full_name: "",
     contact_number: "",
     email: "",
-    preferred_contact_method: "Email",
-    house_type: "House",
+    preferred_contact_method: "email",
+    house_type: "Apartment",
     has_children: "No",
     other_pets: "None",
-    pet_alone_hours: "1-2 hours",
-    monthly_income_range: "Over Rs. 50,000",
-    monthly_budget_range: "Over Rs. 3000",
+    pet_alone_hours: "2-3 hours",
+    monthly_income_range: "Under 20,000",
+    monthly_budget_range: "1000 - 2500",
     motivation: "",
   });
 
@@ -94,8 +94,14 @@ export default function AdoptionForm() {
   useEffect(() => {
     const fetchListingDetails = async () => {
       try {
+        const token = localStorage.getItem("token");
         const res = await axios.get(
           `http://localhost:5000/api/adoption/listings/${listingId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
         );
         console.log(res.data);
         setListingData(res.data);
@@ -116,6 +122,50 @@ export default function AdoptionForm() {
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
+  const mapFormToDB = (formData) => ({
+    ...formData,
+
+    has_children: formData.has_children === "Yes",
+
+    house_type:
+      formData.house_type === "Apartment"
+        ? "apartment"
+        : formData.house_type === "House with Garden"
+          ? "house_with_garden"
+          : formData.house_type === "House without Garden"
+            ? "house_without_garden"
+            : "other",
+
+    pet_alone_hours:
+      formData.pet_alone_hours === "2-3 hours"
+        ? "2_3"
+        : formData.pet_alone_hours === "3-4 hours"
+          ? "3_4"
+          : "4_plus",
+
+    monthly_income_range:
+      formData.monthly_income_range === "Under 20,000"
+        ? "under_20000"
+        : formData.monthly_income_range === "20,000 - 40,000"
+          ? "20000_40000"
+          : formData.monthly_income_range === "40,000 - 60,000"
+            ? "40000_60000"
+            : formData.monthly_income_range === "60,000 - 80,000"
+              ? "60000_80000"
+              : formData.monthly_income_range === "80,000 - 100,000"
+                ? "80000_100000"
+                : "100000_plus",
+
+    monthly_budget_range:
+      formData.monthly_budget_range === "1000 - 2500"
+        ? "1000_2500"
+        : formData.monthly_budget_range === "2500 - 4000"
+          ? "2500_4000"
+          : "4000_plus",
+
+    other_pets: formData.other_pets === "None" ? [] : [formData.other_pets],
+  });
+
   // 2. Final Submission to Backend
   const handleSubmit = async () => {
     setSubmitError("");
@@ -126,12 +176,12 @@ export default function AdoptionForm() {
 
     try {
       const token = localStorage.getItem("token");
-
+      const payload = mapFormToDB(formData);
       const response = await axios.post(
         "http://localhost:5000/api/adoption/apply",
         {
-          listing_id: listingId,
-          ...formData,
+          listing_id: Number(listingId),
+          ...payload,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -175,7 +225,7 @@ export default function AdoptionForm() {
               Your application for {listingData?.name} is pending review.
             </p>
             <button
-              onClick={() => navigate("/notifications")}
+              onClick={() => navigate("/adoptions")}
               className="bg-[#C2185B] text-white px-8 py-3 border-2 border-black font-bold"
             >
               Track Status
@@ -325,9 +375,9 @@ export default function AdoptionForm() {
                   onChange={handleInput}
                   className="w-full border-2 border-black p-3 bg-white font-bold outline-none"
                 >
-                  <option value="Email">Email</option>
-                  <option value="Phone">Phone Call</option>
-                  <option value="WhatsApp">WhatsApp</option>
+                  <option value="email">Email</option>
+                  <option value="phone">Phone Call</option>
+                  <option value="whatsapp">Whatsapp</option>
                 </select>
               </div>
             </div>
@@ -341,7 +391,12 @@ export default function AdoptionForm() {
                 name="house_type"
                 value={formData.house_type}
                 onChange={handleInput}
-                options={["House", "Apartment", "Studio"]}
+                options={[
+                  "Apartment",
+                  "House with Garden",
+                  "House without Garden",
+                  "Other",
+                ]}
               />
               <SelectField
                 label="Children at home?"
@@ -362,7 +417,7 @@ export default function AdoptionForm() {
                 name="pet_alone_hours"
                 value={formData.pet_alone_hours}
                 onChange={handleInput}
-                options={["1-2 hours", "3-5 hours", "6+ hours"]}
+                options={["2-3 hours", "3-4 hours", "4+ hours"]}
               />
               <SelectField
                 label="Monthly Income"
@@ -370,9 +425,12 @@ export default function AdoptionForm() {
                 value={formData.monthly_income_range}
                 onChange={handleInput}
                 options={[
-                  "Under Rs. 20,000",
-                  "Rs. 20,000 - 50,000",
-                  "Over Rs. 50,000",
+                  "Under 20,000",
+                  "20,000 - 40,000",
+                  "40,000 - 60,000",
+                  "60,000 - 80,000",
+                  "80,000 - 100,000",
+                  "Over 100,000",
                 ]}
               />
               <SelectField
@@ -380,7 +438,7 @@ export default function AdoptionForm() {
                 name="monthly_budget_range"
                 value={formData.monthly_budget_range}
                 onChange={handleInput}
-                options={["Under Rs. 1000", "Rs. 1000 - 3000", "Over Rs. 3000"]}
+                options={["1000 - 2500", "2500 - 4000", "4000+"]}
               />
             </div>
           )}
