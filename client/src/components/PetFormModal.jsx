@@ -171,9 +171,11 @@ export default function PetFormModal({ onClose }) {
                                 <option>Monkey</option>
                                 <option>Cat</option>
                                 <option>Dog</option>
-                                <option>Duck</option>
+                                <option>Horse</option>
                                 <option>Bird</option>
+                                <option>Chicken</option>
                                 <option>Rabbit</option>
+                                <option>Cow</option>
                             </select>
                         </div>
                         <div>
