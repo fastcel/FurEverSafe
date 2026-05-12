@@ -186,6 +186,24 @@ const rejectApplication = async (req, res) => {
   }
 };
 
+
+const cancelApplication = async (req, res) => {
+  try {
+    const result = await adoptionService.cancelApplication(
+      req.user.id,
+      req.params.id
+    );
+    return res.status(200).json({ message: "Application cancelled", data: result });
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+};
+
+module.exports = {
+  // ...existing
+  cancelApplication,
+};
+
 module.exports = {
   submitApplication,
   getUserApplications,
@@ -195,4 +213,5 @@ module.exports = {
   approveApplication,
   rejectApplication,
   getApprovedApplicationForPet,
+  cancelApplication,
 };

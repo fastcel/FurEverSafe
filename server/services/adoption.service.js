@@ -368,6 +368,49 @@ const rejectApplication = async (userId, applicationId) => {
   }
 };
 
+const cancelApplication = async (userId, applicationId) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const check = await client.query(
+      `SELECT a.application_id, a.user_id, a.status, p.name AS pet_name
+       FROM adoption_applications a
+       JOIN adoption_listings l ON l.listing_id = a.listing_id
+       JOIN pets p ON p.pet_id = l.pet_id
+       WHERE a.application_id = $1 AND a.user_id = $2`,
+      [applicationId, userId]
+    );
+
+    if (!check.rows.length) throw new Error("Application not found");
+    if (check.rows[0].status !== 'pending') throw new Error("Only pending applications can be cancelled");
+
+    await client.query(
+      `UPDATE adoption_applications SET status = 'cancelled' WHERE application_id = $1`,
+      [applicationId]
+    );
+
+    await client.query("COMMIT");
+
+    await createNotification({
+      user_id: userId,
+      type: "adoption",
+      message: `Your application for ${check.rows[0].pet_name} has been cancelled`,
+      source_type: "adoption_application",
+      source_id: applicationId
+    });
+
+    return { application_id: applicationId, status: "cancelled" };
+
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   submitApplication,
   getUserApplications,
@@ -377,4 +420,5 @@ module.exports = {
   approveApplication,
   rejectApplication,
   getApprovedApplicationForPet,
+  cancelApplication,
 };
