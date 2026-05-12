@@ -36,11 +36,23 @@ router.patch(
   adoptionController.approveApplication
 );
 
+router.get(
+  "/ngo/pets/:petId/approved",
+  authenticate,
+  authorizeRoles("ngo"),
+  adoptionController.getApprovedApplicationForPet
+);
 router.patch(
   "/ngo/applications/:id/reject",
   authenticate,
   authorizeRoles("ngo"),
   adoptionController.rejectApplication
+);
+
+router.patch(
+  "/my-applications/:id/cancel",
+  authenticate,
+  adoptionController.cancelApplication
 );
 
 module.exports = router;

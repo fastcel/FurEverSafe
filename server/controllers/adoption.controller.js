@@ -18,6 +18,19 @@ const submitApplication = async (req, res) => {
   }
 };
 
+
+const getApprovedApplicationForPet = async (req, res) => {
+  try {
+    const data = await adoptionService.getApprovedApplicationForPet(
+      req.user.id,
+      req.params.petId
+    );
+    return res.status(200).json(data);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+};
+
 const getUserApplications = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -192,6 +205,18 @@ const getListingById = async (req, res) => {
   }
 };
 
+const cancelApplication = async (req, res) => {
+  try {
+    const result = await adoptionService.cancelApplication(
+      req.user.id,
+      req.params.id
+    );
+    return res.status(200).json({ message: "Application cancelled", data: result });
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+};
+
 module.exports = {
   submitApplication,
   getUserApplications,
@@ -201,4 +226,6 @@ module.exports = {
   approveApplication,
   rejectApplication,
   getListingById,
+  getApprovedApplicationForPet,
+  cancelApplication,
 };

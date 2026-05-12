@@ -1,14 +1,34 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import logo from "../assets/logo.png";
 
 export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // 👇 get role from storage (you should store it at login)
   const user = JSON.parse(localStorage.getItem("user"));
   const rawRole = user?.role?.toLowerCase().trim();
   const role = rawRole === "citizen" ? "user" : rawRole || "user";
+  const [rewardPoints, setRewardPoints] = useState(0);
+
+  useEffect(() => {
+    if (role !== "user") return;
+
+    const fetchPoints = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:5000/api/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setRewardPoints(data.reward_points || 0);
+      } catch (err) {
+        console.error("Failed to fetch points:", err);
+      }
+    };
+
+    fetchPoints();
+  }, [role]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -17,10 +37,6 @@ export default function Sidebar() {
     navigate("/");
   };
 
-  console.log("RAW USER OBJECT:", user);
-  // ─────────────────────────────
-  // NAV CONFIG PER ROLE
-  // ─────────────────────────────
   const navItemsByRole = {
     user: [
       {
@@ -108,18 +124,21 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* BOTTOM (ONLY FOR NON-ADMIN; no gamification for NGO accounts) */}
+      {/* BOTTOM */}
       {role !== "admin" && (
         <div className="bg-secondary flex flex-col items-center text-center">
           {role !== "ngo" && (
             <>
               <div className="flex flex-col items-center mb-3 text-base font-bold text-[#3a3028]">
                 <span className="text-3xl">🏅</span>
-                <span className="text-xl">190 pts</span>
+                <span className="text-xl">{rewardPoints} pts</span>
               </div>
 
               <div className="w-full h-2.5 bg-[#d9d2c5] rounded-full overflow-hidden mb-3">
-                <div className="h-full w-[62%] bg-success rounded-full" />
+                <div
+                  className="h-full bg-success rounded-full"
+                  style={{ width: `${Math.min((rewardPoints / 400) * 100, 100)}%` }}
+                />
               </div>
             </>
           )}
@@ -133,7 +152,7 @@ export default function Sidebar() {
         </div>
       )}
 
-      {/* ADMIN LOGOUT SIMPLE VERSION */}
+      {/* ADMIN LOGOUT */}
       {role === "admin" && (
         <button
           onClick={handleLogout}

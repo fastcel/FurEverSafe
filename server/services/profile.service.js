@@ -150,7 +150,7 @@ const updateProfile = async (userId, data) => {
 
 const getProfile = async (userId) => {
   const result = await pool.query(
-    `SELECT user_id, name, email, contact_number, role
+    `SELECT user_id, name, email, contact_number, role, reward_points
      FROM users WHERE user_id = $1`,
     [userId]
   );

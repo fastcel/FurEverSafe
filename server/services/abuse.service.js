@@ -74,6 +74,20 @@ const submitReport = async (data) => {
       source_id: report.report_id
     });
 
+
+    const ngoUsers = await pool.query(
+  `SELECT user_id FROM ngos`
+);
+
+for (const ngo of ngoUsers.rows) {
+  await createNotification({
+    user_id: ngo.user_id,
+    type: "abuse_report",
+    message: `⚠️ A new abuse report has been submitted (${trackingId})`,
+    source_type: "abuse_report",
+    source_id: report.report_id
+  });
+}
     return report;
 
   } catch (err) {
@@ -162,7 +176,6 @@ const getNgoReports = async (tab) => {
       pt.name AS pet_type,
 
       l.location_id,
-      l.city,
       l.address,
 
       u.user_id,
@@ -235,7 +248,6 @@ const getReportByIdNgo = async (reportId) => {
       pt.name AS pet_type,
 
       l.location_id,
-      l.city,
       l.address,
 
       u.user_id,
