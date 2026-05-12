@@ -17,14 +17,20 @@ export default function Sidebar() {
     navigate("/");
   };
 
-  
   console.log("RAW USER OBJECT:", user);
   // ─────────────────────────────
   // NAV CONFIG PER ROLE
   // ─────────────────────────────
   const navItemsByRole = {
     user: [
-      { name: "Home", path: "/dashboard" },
+      {
+        name: "Home",
+        path: "/citizen-dashboard",
+        isActive: (p) =>
+          p === "/citizen-dashboard" ||
+          p.startsWith("/citizen-dashboard") ||
+          p.startsWith("/adopt/"),
+      },
       { name: "Adoptions", path: "/adoptions" },
       { name: "Report Abuse", path: "/report-abuse" },
       { name: "Notifications", path: "/notifications" },
@@ -37,12 +43,14 @@ export default function Sidebar() {
       {
         name: "Abuse Reports",
         path: "/ngo-abuse-reports",
-        isActive: (p) => p === "/ngo-abuse-reports" || p.startsWith("/ngo-abuse-reports/"),
+        isActive: (p) =>
+          p === "/ngo-abuse-reports" || p.startsWith("/ngo-abuse-reports/"),
       },
       {
         name: "Notifications",
         path: "/ngo-notifications",
-        isActive: (p) => p === "/ngo-notifications" || p.startsWith("/ngo-notifications/"),
+        isActive: (p) =>
+          p === "/ngo-notifications" || p.startsWith("/ngo-notifications/"),
       },
       {
         name: "Profile",
@@ -67,17 +75,22 @@ export default function Sidebar() {
 
   return (
     <div className="w-64 min-h-screen bg-secondary font-bold flex flex-col justify-between">
-
       {/* Logo */}
       <div className="flex flex-col items-center pt-6 pb-2">
-        <img src={logo} alt="FurEver Safe" className="w-35 h-35 object-contain mb-2" />
+        <img
+          src={logo}
+          alt="FurEver Safe"
+          className="w-35 h-35 object-contain mb-2"
+        />
       </div>
 
       {/* NAV */}
       <nav className="flex-1 flex flex-col mt-2">
         {navItems.map((item) => {
           const pathname = location.pathname;
-          const isActive = item.isActive ? item.isActive(pathname) : pathname === item.path;
+          const isActive = item.isActive
+            ? item.isActive(pathname)
+            : pathname === item.path;
 
           return (
             <button
