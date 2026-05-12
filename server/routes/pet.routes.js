@@ -19,5 +19,10 @@ router.patch(
   petController.updatePetPatch
 );
 router.get("/:id", petController.getPetById);
+router.get(
+  "/user/applied",
+  authenticate,
+  petController.getUserAppliedPets
+);
 
 module.exports = router;

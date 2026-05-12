@@ -144,14 +144,6 @@ export default function UserProfile({ role = "user" }) {
           </button>
         </div>
 
-        {/* Help Button */}
-        <button
-          onClick={() => navigate("/help-and-support")}
-          className="w-full bg-[#d63384] hover:bg-[#b02770] text-white font-bold py-4 rounded-lg mb-4 text-xl transition"
-        >
-          Help and Support
-        </button>
-
         {/* Delete Account */}
         <button
           onClick={() => setShowDeleteModal(true)}

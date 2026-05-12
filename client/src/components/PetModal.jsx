@@ -89,10 +89,9 @@ const PetModal = ({ pet, onClose }) => {
 
           {/* RIGHT SIDE */}
           <div className="flex flex-col gap-6 pr-2 md:pr-4">
-            {/* History */}
             <div className="bg-[#F5F3E7] border-2 border-black p-6 h-full">
               <p className="font-bold text-sm uppercase tracking-widest text-[#C2185B] mb-4">
-                History
+                Description
               </p>
 
               <p className="text-gray-700 text-lg leading-relaxed">

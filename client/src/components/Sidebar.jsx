@@ -50,7 +50,14 @@ export default function Sidebar() {
       { name: "Adoptions", path: "/adoptions" },
       { name: "Report Abuse", path: "/report-abuse" },
       { name: "Notifications", path: "/notifications" },
-      { name: "Profile", path: "/profile" },
+      {
+        name: "Profile",
+        path: "/profile",
+        isActive: (p) =>
+          p === "/profile" ||
+          p.startsWith("/profile") ||
+          p.startsWith("/delete-account"),
+      },
     ],
 
     ngo: [
@@ -133,12 +140,15 @@ export default function Sidebar() {
                 <span className="text-3xl">🏅</span>
                 <span className="text-xl">{rewardPoints} pts</span>
               </div>
-
-              <div className="w-full h-2.5 bg-[#d9d2c5] rounded-full overflow-hidden mb-3">
-                <div
-                  className="h-full bg-success rounded-full"
-                  style={{ width: `${Math.min((rewardPoints / 400) * 100, 100)}%` }}
-                />
+              <div className=" w-full px-3">
+                <div className="w-full h-2.5 bg-[#d9d2c5] rounded-full overflow-hidden mb-3">
+                  <div
+                    className="h-full bg-success rounded-full"
+                    style={{
+                      width: `${Math.min((rewardPoints / 400) * 100, 100)}%`,
+                    }}
+                  />
+                </div>
               </div>
             </>
           )}
