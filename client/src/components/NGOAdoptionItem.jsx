@@ -5,7 +5,7 @@ const NGOAdoptionItem = ({ data, onViewApplications }) => {
         <div className="bg-[#DED9C4] border-2 border-black p-6 flex items-center justify-between rounded-lg shadow-sm hover:shadow-md transition-all">
             <div className="flex items-center gap-8">
                 <img 
-                    src={data.image} 
+                    src={data.image || 'https://placecats.com/300/200'} 
                     alt={data.petName} 
                     className="w-28 h-28 border-2 border-black object-cover rounded-md flex-shrink-0" 
                 />
@@ -20,11 +20,15 @@ const NGOAdoptionItem = ({ data, onViewApplications }) => {
 
             <div className="flex flex-col items-end justify-between h-28 py-1">
                 <div className="flex flex-col items-end gap-1">
-                    <div className="flex items-center gap-2 text-[#C2185B] font-bold text-sm">
-                        <span className="bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-black">!</span>
-                        {data.newCount} new
-                    </div>
-                    <p className="text-3xl font-black text-[#C2185B]">{data.totalApplications} Applications</p>
+                    {data.newCount > 0 && (
+                        <div className="flex items-center gap-2 text-[#C2185B] font-bold text-sm">
+                            <span className="bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-black">!</span>
+                            {data.newCount} new
+                        </div>
+                    )}
+                    <p className="text-3xl font-black text-[#C2185B]">
+                        {data.totalApplications ?? 0} Applications
+                    </p>
                 </div>
 
                 <button
