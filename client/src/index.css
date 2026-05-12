@@ -21,3 +21,28 @@ body {
 #root {
   width: 100%;
 }
+
+/* ===== Custom Scrollbar ===== */
+
+/* width */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+/* track */
+::-webkit-scrollbar-track {
+  background: #f0ebe0;
+}
+
+/* thumb */
+::-webkit-scrollbar-thumb {
+  background: #c8b89a;
+  border-radius: 10px;
+  border: 2px solid #f0ebe0;
+}
+
+/* thumb hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #b8ae9e;
+}

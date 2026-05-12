@@ -62,7 +62,8 @@ const submitReport = async (data) => {
       user_id: data.user_id,
       points: 30,
       source_type: "abuse_report",
-      source_id: report.report_id
+      source_id: report.report_id,
+      reward_type: "abuse_report" 
     });
 
     await createNotification({
@@ -83,25 +84,26 @@ const submitReport = async (data) => {
   }
 };
 
-
-
 const getUserReports = async (user_id) => {
   const result = await pool.query(
     `
     SELECT 
-      report_id,
-      tracking_id,
-      status,
-      created_at,
-      abuse_datetime,
-      severity
-    FROM abuse_reports
-    WHERE user_id = $1
-    ORDER BY created_at DESC
+      ar.report_id,
+      ar.tracking_id,
+      ar.status,
+      ar.created_at,
+      ar.abuse_datetime,
+      ar.severity,
+      pt.name AS pet_type,
+      l.address
+    FROM abuse_reports ar
+    LEFT JOIN pet_types pt ON pt.pet_type_id = ar.pet_type_id
+    LEFT JOIN locations l ON l.location_id = ar.location_id
+    WHERE ar.user_id = $1
+    ORDER BY ar.created_at DESC
     `,
     [user_id]
   );
-
   return result.rows;
 };
 
@@ -160,7 +162,6 @@ const getNgoReports = async (tab) => {
       pt.name AS pet_type,
 
       l.location_id,
-      l.city,
       l.address,
 
       u.user_id,
@@ -233,7 +234,6 @@ const getReportByIdNgo = async (reportId) => {
       pt.name AS pet_type,
 
       l.location_id,
-      l.city,
       l.address,
 
       u.user_id,

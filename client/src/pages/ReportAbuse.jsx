@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import axios from 'axios';
+import axios from "axios";
 import Layout from "../components/Layout";
 import EditIcon from "@mui/icons-material/Edit";
 import UploadIcon from "@mui/icons-material/Upload";
@@ -8,7 +8,20 @@ import MyLocationIcon from "@mui/icons-material/MyLocation";
 import PushPinIcon from "@mui/icons-material/PushPin";
 import { MapContainer, TileLayer, useMapEvents } from "react-leaflet";
 
+const uploadToCloudinary = async (file) => {
+  const formData = new FormData();
 
+  formData.append("file", file);
+  formData.append("upload_preset", "animal_report");
+
+  const res = await fetch("https://api.cloudinary.com/v1_1/de7l3dvdl/upload", {
+    method: "POST",
+    body: formData,
+  });
+
+  const data = await res.json();
+  return data.secure_url;
+};
 
 function MapClickHandler({ repinMode, onMapClick }) {
   useMapEvents({
@@ -23,7 +36,7 @@ async function reverseGeocode(lat, lng) {
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
-      { headers: { "Accept-Language": "en" } }
+      { headers: { "Accept-Language": "en" } },
     );
     const data = await res.json();
     return data.display_name ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
@@ -49,6 +62,20 @@ export default function ReportAbuse() {
   const [animalType, setAnimalType] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [modal, setModal] = useState({
+    open: false,
+    type: "", // "success" | "error"
+    message: "",
+  });
+
+  const showModal = (type, message) => {
+    setModal({
+      open: true,
+      type,
+      message,
+    });
+  };
 
   const severityConfig = [
     { label: "Minor", bg: "bg-[#a6e2b3]" },
@@ -79,68 +106,107 @@ export default function ReportAbuse() {
       setGeocoding(false);
     });
   }
-// --- API SUBMISSION LOGIC ---
+  // --- API SUBMISSION LOGIC ---
   const handleSubmit = async (e) => {
-    if (e) e.preventDefault(); 
-    // ADD THESE LOGS TEMPORARILY:
-  console.log("Date:", dateTime);
-  console.log("Animal:", animalType);
-  console.log("Severity:", severity);
-  console.log("Desc:", description);
+    if (e) e.preventDefault();
 
     if (!dateTime || !animalType || !severity || !description) {
-      alert("Please fill in all required fields!");
+      showModal("error", "Please fill in all required fields!");
       return;
     }
 
     setLoading(true);
+
     try {
-      const token = localStorage.getItem("token"); // Token from login
-      
+      const token = localStorage.getItem("token");
+
+      // 1. UPLOAD IMAGES FIRST
+      const uploadedUrls = await Promise.all(
+        uploadedFiles.map(async (file) => {
+          const response = await fetch(file.url);
+          const blob = await response.blob();
+          const cloudFile = new File([blob], file.name, { type: blob.type });
+
+          return await uploadToCloudinary(cloudFile);
+        }),
+      );
+
+      // 2. SEND ONLY URLS TO BACKEND
       const reportData = {
         latitude: markerPos.lat,
         longitude: markerPos.lng,
-        address: address,
-        description: description,
+        address,
+        description,
         abuse_datetime: dateTime,
         severity: severity.toLowerCase(),
-        // Mapping types to IDs as per DB schema
-        pet_type_id: animalType === "Dog" ? 1 : animalType === "Cat" ? 2 : 3,
-        images: [] // Sending empty array for now
+        pet_type_id:
+          animalType === "Cat"
+            ? 1
+            : animalType === "Dog"
+              ? 2
+              : animalType === "Bird"
+                ? 3
+                : animalType === "Rabbit"
+                  ? 4
+                  : animalType === "Horse"
+                    ? 5
+                    : animalType === "Cow"
+                      ? 6
+                      : animalType === "Chicken"
+                        ? 7
+                        : animalType === "Monkey"
+                          ? 8
+                          : 1,
+        images: uploadedUrls,
       };
 
       const response = await axios.post(
         "http://localhost:5000/api/abuse/report",
         reportData,
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
       );
 
       if (response.status === 201) {
-        alert(`Success! Tracking ID: ${response.data.report.tracking_id}`);
-        // Reset form fields
+        showModal(
+          "success",
+          `Report submitted!\nTracking ID: ${response.data.report.tracking_id}`,
+        );
+
+        // 3. FULL RESET (IMPORTANT)
         setDescription("");
         setSeverity(null);
         setDateTime("");
         setAnimalType("");
+        setUploadedFiles([]);
+        setAddress("Lahore, Punjab");
+        setMarkerPos(DEFAULT_POS);
+        setRepinMode(false);
+        setAddressTouched(false);
       }
     } catch (err) {
-      console.error("Submission Error:", err.response?.data || err.message);
-      alert("Error submitting report. Make sure you are logged in.");
+      console.error(err);
+      showModal("error", "Submission failed. Try again.");
     } finally {
       setLoading(false);
     }
   };
+
   function handleFiles(e) {
     const files = Array.from(e.target.files);
+
     setUploadedFiles((prev) => [
       ...prev,
       ...files.map((file) => ({
         id: `${file.name}-${Date.now()}-${Math.random()}`,
         name: file.name,
+        file,
         url: URL.createObjectURL(file),
         isVideo: file.type.startsWith("video/"),
       })),
     ]);
+
     e.target.value = "";
   }
 
@@ -160,22 +226,22 @@ export default function ReportAbuse() {
 
   return (
     <Layout>
-      <div className="flex flex-col items-center justify-center min-h-screen px-4 py-12">
+      <div className="flex flex-col items-center justify-center min-h-screen px-4 py-6">
         <div className="w-full" style={{ maxWidth: "1251px" }}>
-
           {/* Heading */}
-          <h1 className="text-4xl font-bold text-purple-900 mb-3">Report Abuse</h1>
+          <h1 className="text-4xl font-bold text-purple-900 mb-3">
+            Report Abuse
+          </h1>
           <p className="text-gray-700 italic mb-10">
-            If you witness animal cruelty or neglect, please report it so NGOs can take action.
+            If you witness animal cruelty or neglect, please report it so NGOs
+            can take action.
           </p>
 
           {/* Main card */}
           <div className="bg-[#dcd3c1] p-12 rounded-lg shadow-sm border border-gray-800">
             <form className="grid grid-cols-1 md:grid-cols-2 gap-12">
-
               {/* ═══════════════ LEFT COLUMN ═══════════════ */}
               <div className="space-y-8">
-
                 {/* Date & Time */}
                 <div>
                   <label className="block text-sm font-bold text-gray-800 mb-2">
@@ -185,7 +251,7 @@ export default function ReportAbuse() {
                     type="datetime-local"
                     value={dateTime} // Must match your useState name
                     onChange={(e) => setDateTime(e.target.value)} // This "saves" what you type
-                     className="w-full p-3 border-2 border-black rounded bg-[#f8f5f0] text-sm cursor-pointer"
+                    className="w-full p-3 border-2 border-black rounded bg-[#f8f5f0] text-sm cursor-pointer"
                   />
                 </div>
 
@@ -194,16 +260,20 @@ export default function ReportAbuse() {
                   <label className="block text-sm font-bold text-gray-800 mb-2">
                     Animal Type <span className="text-red-500">*</span>
                   </label>
-                  <select 
-                  value={animalType} 
-                  onChange={(e) => setAnimalType(e.target.value)}
-                  className="w-full p-3 border-2 border-black rounded bg-[#f8f5f0] text-sm appearance-none">
+                  <select
+                    value={animalType}
+                    onChange={(e) => setAnimalType(e.target.value)}
+                    className="w-full p-3 border-2 border-black rounded bg-[#f8f5f0] text-sm appearance-none"
+                  >
                     <option>Select Animal Type...</option>
                     <option>Dog</option>
                     <option>Cat</option>
                     <option>Bird</option>
                     <option>Horse</option>
-                    <option>Other</option>
+                    <option>Rabbit</option>
+                    <option>Cow</option>
+                    <option>Chicken</option>
+                    <option>Monkey</option>
                   </select>
                 </div>
 
@@ -225,10 +295,14 @@ export default function ReportAbuse() {
                             text-black transition-all duration-150 select-none ${bg}
                             ${isSelected
                               ? "scale-90 shadow-inner brightness-90 ring-2 ring-black ring-offset-1"
-                              : "hover:opacity-80 scale-100"}
+                              : "hover:opacity-80 scale-100"
+                            }
                           `}
                         >
-                          {label}{isSelected && <span className="ml-1 text-xs">✓</span>}
+                          {label}
+                          {isSelected && (
+                            <span className="ml-1 text-xs">✓</span>
+                          )}
                         </button>
                       );
                     })}
@@ -244,7 +318,10 @@ export default function ReportAbuse() {
                   <div className="border-2 border-black rounded overflow-hidden relative">
                     <div
                       className="relative"
-                      style={{ height: "220px", cursor: repinMode ? "crosshair" : "default" }}
+                      style={{
+                        height: "220px",
+                        cursor: repinMode ? "crosshair" : "default",
+                      }}
                     >
                       <MapContainer
                         center={[markerPos.lat, markerPos.lng]}
@@ -257,7 +334,10 @@ export default function ReportAbuse() {
                           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
-                        <MapClickHandler repinMode={repinMode} onMapClick={handleMapClick} />
+                        <MapClickHandler
+                          repinMode={repinMode}
+                          onMapClick={handleMapClick}
+                        />
                       </MapContainer>
 
                       <button
@@ -268,7 +348,8 @@ export default function ReportAbuse() {
                           font-bold rounded flex items-center gap-1 transition
                           ${repinMode
                             ? "bg-purple-700 text-white border-purple-900"
-                            : "bg-white text-black border-gray-400 hover:bg-gray-50"}
+                            : "bg-white text-black border-gray-400 hover:bg-gray-50"
+                          }
                         `}
                       >
                         <PushPinIcon style={{ fontSize: 11 }} />
@@ -281,7 +362,9 @@ export default function ReportAbuse() {
                         title="Use my current location"
                         className="absolute bottom-8 right-2 z-[1000] bg-white border border-gray-400 rounded p-1 shadow hover:bg-gray-50 transition"
                       >
-                        <MyLocationIcon style={{ fontSize: 16, color: "#6b21a8" }} />
+                        <MyLocationIcon
+                          style={{ fontSize: 16, color: "#6b21a8" }}
+                        />
                       </button>
 
                       {geocoding && (
@@ -302,7 +385,10 @@ export default function ReportAbuse() {
                     <input
                       type="text"
                       value={address}
-                      onChange={(e) => { setAddress(e.target.value); setAddressTouched(true); }}
+                      onChange={(e) => {
+                        setAddress(e.target.value);
+                        setAddressTouched(true);
+                      }}
                       placeholder="Or Enter Address Manually..."
                       className={`w-full p-3 pr-8 border-2 border-black rounded bg-[#f8f5f0] text-sm transition-all ${addressTouched ? "text-black not-italic" : "text-gray-400 italic"}`}
                     />
@@ -313,19 +399,22 @@ export default function ReportAbuse() {
 
                   <p className="text-[10px] text-gray-500 mt-2 italic">
                     Enable "Click To Repin" to place a point on the map • or use{" "}
-                    <MyLocationIcon style={{ fontSize: 10, verticalAlign: "middle" }} /> to detect your GPS location.
+                    <MyLocationIcon
+                      style={{ fontSize: 10, verticalAlign: "middle" }}
+                    />{" "}
+                    to detect your GPS location.
                   </p>
                 </div>
               </div>
 
               {/* ═══════════════ RIGHT COLUMN ═══════════════ */}
               <div className="space-y-8 flex flex-col">
-
                 {/* Description */}
                 <div className="flex-1">
                   <div className="flex justify-between items-center mb-2">
                     <label className="block text-sm font-bold text-gray-800">
-                      Description of the Incident <span className="text-red-500">*</span>
+                      Description of the Incident{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <EditIcon />
                   </div>
@@ -356,11 +445,17 @@ export default function ReportAbuse() {
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleDrop}
                     className="border-2 border-black border-dashed rounded bg-[#f8f5f0] flex flex-col items-center justify-center p-6 text-center cursor-pointer hover:bg-gray-100 transition"
-                    style={{ minHeight: uploadedFiles.length > 0 ? "5rem" : "11rem" }}
+                    style={{
+                      minHeight: uploadedFiles.length > 0 ? "5rem" : "11rem",
+                    }}
                   >
                     <UploadIcon className="text-green-600 text-2xl mb-2" />
-                    <p className="text-xs font-bold text-gray-600">Click or drag photos/videos here</p>
-                    <p className="text-[10px] text-gray-400 mt-1">JPG, PNG, MP4 — max 20 MB each</p>
+                    <p className="text-xs font-bold text-gray-600">
+                      Click or drag photos/videos here
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      JPG, PNG, MP4 — max 20 MB each
+                    </p>
                   </div>
 
                   {uploadedFiles.length > 0 && (
@@ -374,16 +469,28 @@ export default function ReportAbuse() {
                             <video
                               src={file.url}
                               className="w-full h-full object-cover"
-                              muted playsInline
+                              muted
+                              playsInline
                               onMouseEnter={(e) => e.currentTarget.play()}
-                              onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.pause();
+                                e.currentTarget.currentTime = 0;
+                              }}
                             />
                           ) : (
-                            <img src={file.url} alt={file.name} className="w-full h-full object-cover" />
+                            <img
+                              src={file.url}
+                              alt={file.name}
+                              className="w-full h-full object-cover"
+                            />
                           )}
                           <button
                             type="button"
-                            onClick={() => setUploadedFiles((p) => p.filter((f) => f.id !== file.id))}
+                            onClick={() =>
+                              setUploadedFiles((p) =>
+                                p.filter((f) => f.id !== file.id),
+                              )
+                            }
                             className="absolute top-1 right-1 bg-black bg-opacity-60 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-opacity-90 transition"
                           >
                             <CloseIcon style={{ fontSize: 12 }} />
@@ -404,7 +511,7 @@ export default function ReportAbuse() {
 
           {/* Submit */}
           <div className="flex justify-center mt-10">
-            <button 
+            <button
               type="button"
               onClick={handleSubmit}
               disabled={loading}
@@ -413,9 +520,32 @@ export default function ReportAbuse() {
               {loading ? "Submitting..." : "Submit Report"}
             </button>
           </div>
-
         </div>
       </div>
+      {modal.open && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[99999]">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-[350px] text-center relative z-[100000]">
+            <div className="text-4xl mb-3">
+              {modal.type === "error" ? "❌" : "✅"}
+            </div>
+
+            <h2 className="text-lg font-bold text-[#3a3028] mb-3">
+              {modal.type === "error" ? "Error" : "Success"}
+            </h2>
+
+            <p className="text-sm text-gray-600 whitespace-pre-line mb-6">
+              {modal.message}
+            </p>
+
+            <button
+              onClick={() => setModal({ open: false, type: "", message: "" })}
+              className="px-6 py-2 rounded bg-[#C2185B] hover:bg-[#a3154c] text-white font-bold"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }

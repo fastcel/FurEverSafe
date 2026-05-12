@@ -2,7 +2,7 @@ const { pool } = require("../db");
 
 const addReward = async ({
   user_id,
-  reward_type = "manual",
+  reward_type,
   points,
   source_type,
   source_id

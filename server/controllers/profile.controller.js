@@ -4,7 +4,23 @@ const updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const updatedUser = await profileService.updateProfile(userId, req.body);
+    const {
+      name,
+      email,
+      contact_number,
+      oldPassword,
+      newPassword,
+      confirmPassword
+    } = req.body;
+
+    const updatedUser = await profileService.updateProfile(userId, {
+      name,
+      email,
+      contact_number,
+      oldPassword,
+      newPassword,
+      confirmPassword
+    });
 
     res.json({
       message: "Profile updated successfully",
@@ -20,6 +36,34 @@ const updateProfile = async (req, res) => {
   }
 };
 
+const getProfile = async (req, res) => {
+  try {
+    const user = await profileService.getProfile(req.user.id);
+    res.json(user);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+const deleteProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    await profileService.deleteProfile(userId);
+
+    res.json({
+      message: "Account deleted successfully"
+    });
+
+  } catch (err) {
+    res.status(400).json({
+      error: err.message || "Failed to delete account"
+    });
+  }
+};
+
 module.exports = {
   updateProfile,
+  getProfile,
+  deleteProfile,
 };

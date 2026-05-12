@@ -1,22 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
 
-const FilterModal = ({ onClose }) => {
-  const [sections, setSections] = useState([
-    { title: "Category", tags: ["Cat", "Dog", "Bird", "Snake"], selected: "Cat" },
-    { title: "Upload date", tags: ["Today", "Last Week", "Last Month", "Last Year"], selected: "Last Week" },
-    { title: "Breed", tags: ["Siamese", "Spotted", "Tiger", "Persian"], selected: "Persian" },
-    { title: "Age", tags: ["<1 year", "1-2 years", "3-7 years", ">7 years"], selected: "3-7 years" },
-    { title: "Location", tags: ["Lahore", "Karachi", "Islamabad"], selected: "Karachi" },
-  ]);
+const DEFAULT_SECTIONS = [
+  { title: "Category", tags: ["Cat", "Dog", "Bird", "Snake"], selected: "Cat" },
+  { title: "Upload date", tags: ["Today", "Last Week", "Last Month", "Last Year"], selected: "Last Week" },
+  { title: "Breed", tags: ["Siamese", "Spotted", "Tiger", "Persian"], selected: "Persian" },
+  { title: "Age", tags: ["<1 year", "1-2 years", "3-7 years", ">7 years"], selected: "3-7 years" },
+  { title: "Location", tags: ["Lahore", "Karachi", "Islamabad"], selected: "Karachi" },
+];
+
+function cloneSections(sections) {
+  return sections.map((s) => ({ ...s }));
+}
+
+const FilterModal = ({ onClose, sections: sectionsFromParent, onApply, onReset }) => {
+  const base = sectionsFromParent ?? DEFAULT_SECTIONS;
+  const [sections, setSections] = useState(() => cloneSections(base));
+
+  useEffect(() => {
+    setSections(cloneSections(sectionsFromParent ?? DEFAULT_SECTIONS));
+  }, [sectionsFromParent]);
 
   const handleSelect = (sectionTitle, tag) => {
     setSections((prev) =>
       prev.map((sec) =>
-        sec.title === sectionTitle
-          ? { ...sec, selected: tag }
-          : sec
+        sec.title === sectionTitle ? { ...sec, selected: tag } : sec
       )
     );
+  };
+
+  const handleApply = () => {
+    if (onApply) {
+      const selection = Object.fromEntries(sections.map((s) => [s.title, s.selected]));
+      onApply(selection);
+    }
+    onClose();
+  };
+
+  const handleReset = () => {
+    setSections(cloneSections(sectionsFromParent ?? DEFAULT_SECTIONS));
+    onReset?.();
+    onClose();
   };
 
   return (
@@ -37,6 +60,7 @@ const FilterModal = ({ onClose }) => {
             {sec.tags.map((tag) => (
               <button
                 key={tag}
+                type="button"
                 onClick={() => handleSelect(sec.title, tag)}
                 className={`text-xs p-1 px-2 rounded-md border text-left flex justify-between items-center transition-all ${sec.selected === tag
                   ? "bg-[#C2185B] text-white border-black"
@@ -57,12 +81,17 @@ const FilterModal = ({ onClose }) => {
       </div>
 
       <div className="flex justify-end gap-4 mt-6">
-        <button className="bg-[#C2185B] text-white px-8 py-1 rounded-md font-bold border-2 border-black  ">
+        <button
+          type="button"
+          onClick={handleApply}
+          className="bg-[#C2185B] text-white px-8 py-1 rounded-md font-bold border-2 border-black  "
+        >
           Apply
         </button>
 
         <button
-          onClick={onClose}
+          type="button"
+          onClick={handleReset}
           className="bg-white text-black px-8 py-1 rounded-md font-bold border-2 border-black"
         >
           Reset

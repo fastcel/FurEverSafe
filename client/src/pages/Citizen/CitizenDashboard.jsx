@@ -10,117 +10,112 @@ export default function CitizenDashboard() {
   const [selectedPet, setSelectedPet] = useState(null);
   const [showSort, setShowSort] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
+  const [pets, setPets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  //API INTEGRATION STATES
-    const [pets, setPets] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-
-  // --- FETCH DATA FROM REST API ---
   useEffect(() => {
     const fetchPets = async () => {
       try {
         setLoading(true);
         const response = await axios.get('http://localhost:5000/api/pets');
-        
         setPets(response.data); 
-        setLoading(false);
       } catch (err) {
         console.error("API Error:", err);
-        setError("Failed to load pets. Is the server running?");
+        setError("Failed to load pets.");
+      } finally {
         setLoading(false);
       }
     };
-
     fetchPets();
   }, []);
 
-  // Filter live data into categories
-  const cats = pets.filter(p => p.animalType?.toLowerCase() === 'cat');
-  const dogs = pets.filter(p => p.animalType?.toLowerCase() === 'dog');
-  const rabbits = pets.filter(p => p.animalType?.toLowerCase() === 'rabbit');
+  const groupedPets = pets.reduce((groups, pet) => {
+    const type = pet.pet_type || pet.animalType || "Other";
+    if (!groups[type]) groups[type] = [];
+    groups[type].push(pet);
+    return groups;
+  }, {});
+
+  const animalTypes = Object.keys(groupedPets);
 
   return (
     <Layout>
-      <div className="w-full relative">
+      {/* Background color for the main content area to match Figma's soft cream/beige */}
+      <div className="w-full min-h-screen p-8 bg-[#F5F1E3]">
         {selectedPet && <PetModal pet={selectedPet} onClose={() => setSelectedPet(null)} />}
 
-        {/* Header / Search Bar */}
-        <div className="flex items-center gap-4 mb-8 w-full relative">
+        {/* --- HEADER SECTION --- */}
+        {/* Added flex-nowrap and specific gap to match Figma's alignment */}
+        <div className="flex items-center justify-between gap-6 mb-10 w-full">
+          
+          {/* Search Bar: Reduced height and rounded borders like Figma */}
           <div className="relative flex-1">
-            <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
-            <input type="text" placeholder="Search..." className="w-full p-2 pl-10 rounded-sm border border-gray-300 bg-white" />
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">🔍</span>
+            <input 
+              type="text" 
+              placeholder="Search..." 
+              className="w-full py-2 pl-12 pr-4 rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-1 focus:ring-pink-500 shadow-sm text-lg" 
+            />
           </div>
 
-          {/* Sort Button Container */}
-          <div className="relative">
-            <button
-              onClick={() => { setShowSort(!showSort); setShowFilter(false); }}
-              className="bg-[#C2185B] text-white px-8 py-2 rounded-sm font-bold text-sm border-2 border-black"
-            >
-              ↕ Sort
-            </button>
-            {showSort && <SortDropdown onClose={() => setShowSort(false)} />}
-          </div>
+          {/* Buttons: Added shadow, rounded corners, and specific Figma Pink color */}
+          <div className="flex gap-4">
+            <div className="relative">
+              <button
+                onClick={() => { setShowSort(!showSort); setShowFilter(false); }}
+                className="bg-[#C2185B] text-white px-6 py-2 rounded-md font-bold text-sm border-b-4 border-black hover:bg-[#A3144D] active:border-b-0 active:translate-y-1 transition-all flex items-center gap-2"
+              >
+                ↕ Sort
+              </button>
+              {showSort && <div className="absolute right-0 mt-2 z-50"><SortDropdown onClose={() => setShowSort(false)} /></div>}
+            </div>
 
-          {/* Filter Button Container */}
-          <div className="relative">
-            <button
-              onClick={() => { setShowFilter(!showFilter); setShowSort(false); }}
-              className="bg-[#C2185B] text-white px-8 py-2 rounded-sm font-bold text-sm border-2 border-black"
-            >
-              Y Filter
-            </button>
-            {showFilter && <FilterModal onClose={() => setShowFilter(false)} />}
+            <div className="relative">
+              <button
+                onClick={() => { setShowFilter(!showFilter); setShowSort(false); }}
+                className="bg-[#C2185B] text-white px-6 py-2 rounded-md font-bold text-sm border-b-4 border-black hover:bg-[#A3144D] active:border-b-0 active:translate-y-1 transition-all flex items-center gap-2"
+              >
+                🔍 Filter
+              </button>
+              {showFilter && <div className="absolute right-0 mt-2 z-50"><FilterModal onClose={() => setShowFilter(false)} /></div>}
+            </div>
           </div>
         </div>
 
+        {/* --- PETS CONTENT --- */}
         <div className="w-full">
           {loading ? (
-            <div className="text-center py-20 font-bold text-xl animate-pulse">Loading pets from server...</div>
+            <div className="text-center py-20 font-bold text-xl text-pink-700 animate-pulse">Fetching your new friends...</div>
           ) : error ? (
             <div className="text-center py-20 text-red-600 font-bold">{error}</div>
           ) : (
             <>
-              {/* Cats Section */}
-              {cats.length > 0 && (
-                <section className="mb-12">
-                  <h2 className="text-xl font-bold mb-4 text-[#2D2D2D]">Cats</h2>
-                  <div className="flex flex-wrap gap-8">
-                    {cats.map((item) => (
-                      <PetCard key={item._id} {...item} onClick={() => setSelectedPet(item)} />
-                    ))}
-                  </div>
-                </section>
-              )}
+              {animalTypes.length > 0 ? (
+                animalTypes.map((type) => (
+                  <section key={type} className="mb-14">
+                    {/* Header: Dark purple/black color and proper margin */}
+                    <h2 className="text-3xl font-black mb-8 text-[#3A1D44] capitalize">
+                      {type}s
+                    </h2>
 
-              {/* Dogs Section */}
-              {dogs.length > 0 && (
-                <section className="mb-12 pt-6 border-t border-gray-400">
-                  <h2 className="text-xl font-bold mb-4 text-[#2D2D2D]">Dogs</h2>
-                  <div className="flex flex-wrap gap-8">
-                    {dogs.map((item) => (
-                      <PetCard key={item._id} {...item} onClick={() => setSelectedPet(item)} />
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* Rabbits Section */}
-              {rabbits.length > 0 && (
-                <section className="mb-12 pt-6 border-t border-gray-400">
-                  <h2 className="text-xl font-bold mb-4 text-[#2D2D2D]">Rabbits</h2>
-                  <div className="flex flex-wrap gap-8">
-                    {rabbits.map((item) => (
-                      <PetCard key={item._id} {...item} onClick={() => setSelectedPet(item)} />
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {pets.length === 0 && (
-                <div className="text-center py-20 text-gray-500 italic">No furry friends currently available.</div>
+                    {/* Grid Layout: Using 4 columns for large screens to match Figma */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                      {groupedPets[type].map((pet) => (
+                        <PetCard 
+                          key={pet.pet_id || pet.id} 
+                          {...pet} 
+                          image={pet.image_url || pet.image}
+                          onClick={() => setSelectedPet(pet)} 
+                        />
+                      ))}
+                    </div>
+                  </section>
+                ))
+              ) : (
+                <div className="text-center py-20 text-gray-500 italic text-xl border-2 border-dashed border-gray-300 rounded-xl">
+                  No furry friends currently available.
+                </div>
               )}
             </>
           )}
@@ -128,5 +123,4 @@ export default function CitizenDashboard() {
       </div>
     </Layout>
   );
-
 }

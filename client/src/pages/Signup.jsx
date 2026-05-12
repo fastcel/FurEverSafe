@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import bg from "../assets/bgsignup.png";
 import logo from "../assets/logo.png";
 import axios from "axios";
@@ -13,43 +14,55 @@ export default function SignupPage() {
     password: "",
     confirmPassword: "",
   });
+  
 
-  const [errors, setErrors] = useState({}); // ✅ error state
+  const [errors, setErrors] = useState({}); 
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  
   const handleSubmit = async () => {
-    setErrors({}); // clear old errors first
+  setErrors({});
+  setLoading(true);
 
-    try {
-      const res = await axios.post("http://localhost:5000/api/auth/signup", {
-        name: form.name,
-        email: form.email,
-        contact: form.contact,
-        password: form.password,
-        role,
-      });
+  try {
+    const res = await axios.post("http://localhost:5000/api/auth/signup", {
+      name: form.name,
+      email: form.email,
+      contact: form.contact,
+      password: form.password,
+      role,
+    });
 
-      alert(res.data.message);
-    } catch (err) {
-      const message = err.response?.data?.error;
+    // optional: store token if backend returns it
+    // localStorage.setItem("token", res.data.token);
 
-      // ✅ map backend errors to fields
-      if (message === "Email already exists") {
-        setErrors({ email: message });
-      } else if (message === "Username already exists") {
-        setErrors({ name: message });
-      } else if (message === "All fields are required") {
-        setErrors({ general: message });
-      } else if (message) {
-        setErrors({ general: message });
-      } else {
-        setErrors({ general: "Server error. Please try again." });
-      }
+    // redirect based on role
+    if (role === "citizen") {
+      navigate("/dashboard");
+    } else {
+      navigate("/ngo-dashboard");
     }
-  };
+
+  } catch (err) {
+    const message = err.response?.data?.error;
+
+    if (message === "Email already exists") {
+      setErrors({ email: message });
+    } else if (message === "Username already exists") {
+      setErrors({ name: message });
+    } else {
+      setErrors({ general: message || "Server error" });
+    }
+
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="flex h-screen w-screen overflow-hidden">
@@ -178,18 +191,19 @@ export default function SignupPage() {
             </div>
           </div>
 
-          {/* SUBMIT */}
           <button
-            onClick={handleSubmit}
-            className="w-full bg-[#d94f8a] hover:bg-[#c43f7a] text-white font-bold py-2.5 rounded-xl"
-          >
-            Create Account
-          </button>
+          onClick={handleSubmit}
+          disabled={loading}
+          className={`w-full font-bold py-2.5 rounded-xl text-white transition
+            ${loading ? "bg-gray-400" : "bg-[#d94f8a] hover:bg-[#c43f7a]"}`}
+        >
+          {loading ? "Signing Up..." : "Create Account"}
+        </button>
 
           {/* LOGIN */}
           <p className="text-center text-sm text-gray-500 mt-4">
             Already have an account?{" "}
-            <a href="/login" className="text-[#c06080] font-bold">
+            <a href="/" className="text-[#c06080] font-bold">
               Login!
             </a>
           </p>
