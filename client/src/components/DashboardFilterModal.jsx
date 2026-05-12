@@ -1,50 +1,86 @@
 import React, { useState, useEffect } from "react";
 
-const DEFAULT_SECTIONS = [
-  { title: "Category", tags: ["Cat", "Dog", "Bird", "Snake"], selected: "Cat" },
-  { title: "Upload date", tags: ["Today", "Last Week", "Last Month", "Last Year"], selected: "Last Week" },
-  { title: "Breed", tags: ["Siamese", "Spotted", "Tiger", "Persian"], selected: "Persian" },
-  { title: "Age", tags: ["<1 year", "1-2 years", "3-7 years", ">7 years"], selected: "3-7 years" },
-  { title: "Location", tags: ["Lahore", "Karachi", "Islamabad"], selected: "Karachi" },
-];
-
-function cloneSections(sections) {
-  return sections.map((s) => ({ ...s }));
-}
-
-const FilterModal = ({ onClose, sections: sectionsFromParent, onApply, onReset }) => {
-  const base = sectionsFromParent ?? DEFAULT_SECTIONS;
-  const [sections, setSections] = useState(() => cloneSections(base));
-
-  useEffect(() => {
-    setSections(cloneSections(sectionsFromParent ?? DEFAULT_SECTIONS));
-  }, [sectionsFromParent]);
-
+const FilterModal = ({ onClose, sections, setSections, onApply, onReset }) => {
   const handleSelect = (sectionTitle, tag) => {
     setSections((prev) =>
-      prev.map((sec) =>
-        sec.title === sectionTitle ? { ...sec, selected: tag } : sec
-      )
+      prev.map((sec) => {
+        if (sec.title !== sectionTitle) {
+          return sec;
+        }
+
+        return {
+          ...sec,
+          selected: sec.selected === tag ? "" : tag,
+        };
+      }),
     );
   };
 
   const handleApply = () => {
     if (onApply) {
-      const selection = Object.fromEntries(sections.map((s) => [s.title, s.selected]));
-      onApply(selection);
+      const selection = Object.fromEntries(
+        sections.map((s) => [s.title, s.selected]),
+      );
+
+      const filters = {
+        category: selection["Category"] || "",
+
+        city: selection["Location"] || "",
+
+        gender: selection["Gender"] || "",
+
+        age:
+          selection["Age"] === "Baby"
+            ? "baby"
+            : selection["Age"] === "Young"
+              ? "young"
+              : selection["Age"] === "Adult"
+                ? "adult"
+                : selection["Age"] === "Senior"
+                  ? "senior"
+                  : "",
+
+        uploadDate:
+          selection["Upload date"] === "Today"
+            ? "today"
+            : selection["Upload date"] === "Last Week"
+              ? "week"
+              : selection["Upload date"] === "Last Month"
+                ? "month"
+                : selection["Upload date"] === "Last Year"
+                  ? "year"
+                  : "",
+      };
+
+      onApply(filters);
     }
+
     onClose();
   };
 
   const handleReset = () => {
-    setSections(cloneSections(sectionsFromParent ?? DEFAULT_SECTIONS));
+    const resetSections = sections.map((sec) => ({
+      ...sec,
+      selected: "",
+    }));
+
+    setSections(resetSections);
+
+    onApply?.({
+      category: "",
+      city: "",
+      gender: "",
+      age: "",
+      uploadDate: "",
+    });
+
     onReset?.();
+
     onClose();
   };
 
   return (
     <div className="absolute right-0 mt-2 w-[800px] bg-[#EDEFD7] border-2 border-black z-30 p-4">
-
       <div className="bg-[#DED9C4] -m-4 mb-4 p-2 text-center font-bold border-b-2 border-black">
         Filter by
       </div>
@@ -52,7 +88,6 @@ const FilterModal = ({ onClose, sections: sectionsFromParent, onApply, onReset }
       <div className="grid grid-cols-5 gap-4 py-4">
         {sections.map((sec) => (
           <div key={sec.title} className="flex flex-col gap-2">
-
             <h3 className="font-bold border-b border-black pb-1 mb-2">
               {sec.title}
             </h3>
@@ -62,10 +97,11 @@ const FilterModal = ({ onClose, sections: sectionsFromParent, onApply, onReset }
                 key={tag}
                 type="button"
                 onClick={() => handleSelect(sec.title, tag)}
-                className={`text-xs p-1 px-2 rounded-md border text-left flex justify-between items-center transition-all ${sec.selected === tag
-                  ? "bg-[#C2185B] text-white border-black"
-                  : "bg-white text-black border-gray-300"
-                  }`}
+                className={`text-xs p-1 px-2 rounded-md border text-left flex justify-between items-center transition-all ${
+                  sec.selected === tag
+                    ? "bg-[#C2185B] text-white border-black"
+                    : "bg-white text-black border-gray-300"
+                }`}
               >
                 {tag}
 

@@ -8,6 +8,7 @@ const adoptionController = require("../controllers/adoption.controller");
 
 router.post("/apply", authenticate, adoptionController.submitApplication);
 router.get("/my-applications", authenticate, adoptionController.getUserApplications);
+router.get("/listings/:listingId", authenticate, adoptionController.getListingById);
 router.get(
   "/ngo/pets",
   authenticate,

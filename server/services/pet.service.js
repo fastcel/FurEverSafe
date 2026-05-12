@@ -15,9 +15,12 @@ const getAllPets = async (filters) => {
     sort,
   } = filters;
 
+  const values = [];
+
   let query = `
     SELECT
       p.pet_id,
+      l.listing_id,
       p.name,
       p.breed,
       p.gender,
@@ -33,11 +36,13 @@ const getAllPets = async (filters) => {
       n.ngo_id,
       u.name AS ngo_name,
 
-      (
-        SELECT json_agg(image_url)
-        FROM pet_images pi
-        WHERE pi.pet_id = p.pet_id
-        LIMIT 1
+      COALESCE(
+        (
+          SELECT json_agg(pi.image_url)
+          FROM pet_images pi
+          WHERE pi.pet_id = p.pet_id
+        ),
+        '[]'
       ) AS images
 
     FROM pets p
@@ -50,31 +55,37 @@ const getAllPets = async (filters) => {
 
     LEFT JOIN users u
       ON u.user_id = n.user_id
+    
+    LEFT JOIN adoption_listings l
+      ON l.pet_id = p.pet_id
 
     WHERE p.status = 'available'
   `;
 
-  const values = [];
-
   /* =========================
      SEARCH
   ========================= */
-  if (search) {
-    values.push(`%${search}%`);
+
+  if (search?.trim()) {
+
+    values.push(`%${search.trim()}%`);
 
     query += `
       AND (
         p.name ILIKE $${values.length}
         OR p.breed ILIKE $${values.length}
         OR p.city ILIKE $${values.length}
+        OR pt.name ILIKE $${values.length}
       )
     `;
   }
 
   /* =========================
-     CATEGORY FILTER
+     CATEGORY
   ========================= */
+
   if (category) {
+
     values.push(category);
 
     query += `
@@ -83,9 +94,11 @@ const getAllPets = async (filters) => {
   }
 
   /* =========================
-     CITY FILTER
+     CITY
   ========================= */
+
   if (city) {
+
     values.push(city);
 
     query += `
@@ -94,9 +107,11 @@ const getAllPets = async (filters) => {
   }
 
   /* =========================
-     GENDER FILTER
+     GENDER
   ========================= */
+
   if (gender) {
+
     values.push(gender);
 
     query += `
@@ -105,86 +120,81 @@ const getAllPets = async (filters) => {
   }
 
   /* =========================
-     AGE FILTER
+     AGE
   ========================= */
-  if (age) {
 
-    // baby = 0-1
-    if (age === "baby") {
-      query += ` AND p.age BETWEEN 0 AND 1`;
-    }
+  if (age === "baby") {
+    query += ` AND p.age BETWEEN 0 AND 1`;
+  }
 
-    // young = 2-5
-    else if (age === "young") {
-      query += ` AND p.age BETWEEN 2 AND 5`;
-    }
+  else if (age === "young") {
+    query += ` AND p.age BETWEEN 2 AND 5`;
+  }
 
-    // adult = 6-10
-    else if (age === "adult") {
-      query += ` AND p.age BETWEEN 6 AND 10`;
-    }
+  else if (age === "adult") {
+    query += ` AND p.age BETWEEN 6 AND 10`;
+  }
 
-    // senior = 11+
-    else if (age === "senior") {
-      query += ` AND p.age >= 11`;
-    }
+  else if (age === "senior") {
+    query += ` AND p.age >= 11`;
   }
 
   /* =========================
-     UPLOAD DATE FILTER
+     UPLOAD DATE
   ========================= */
-  if (uploadDate) {
 
-    if (uploadDate === "today") {
-      query += `
-        AND DATE(p.created_at) = CURRENT_DATE
-      `;
-    }
+  if (uploadDate === "today") {
 
-    else if (uploadDate === "week") {
-      query += `
-        AND p.created_at >= NOW() - INTERVAL '7 days'
-      `;
-    }
+    query += `
+      AND DATE(p.created_at) = CURRENT_DATE
+    `;
+  }
 
-    else if (uploadDate === "month") {
-      query += `
-        AND p.created_at >= NOW() - INTERVAL '1 month'
-      `;
-    }
+  else if (uploadDate === "week") {
 
-    else if (uploadDate === "year") {
-      query += `
-        AND p.created_at >= NOW() - INTERVAL '1 year'
-      `;
-    }
+    query += `
+      AND p.created_at >= NOW() - INTERVAL '7 days'
+    `;
+  }
+
+  else if (uploadDate === "month") {
+
+    query += `
+      AND p.created_at >= NOW() - INTERVAL '1 month'
+    `;
+  }
+
+  else if (uploadDate === "year") {
+
+    query += `
+      AND p.created_at >= NOW() - INTERVAL '1 year'
+    `;
   }
 
   /* =========================
      SORTING
   ========================= */
-  if (sort === "newest") {
-    query += ` ORDER BY p.created_at DESC`;
-  }
 
-  else if (sort === "oldest") {
-    query += ` ORDER BY p.created_at ASC`;
-  }
+  switch (sort) {
 
-  else if (sort === "alphabetical") {
-    query += ` ORDER BY p.name ASC`;
-  }
+    case "oldest":
+      query += ` ORDER BY p.created_at ASC`;
+      break;
 
-  else if (sort === "age_low_high") {
-    query += ` ORDER BY p.age ASC`;
-  }
+    case "alphabetical":
+      query += ` ORDER BY p.name ASC`;
+      break;
 
-  else if (sort === "age_high_low") {
-    query += ` ORDER BY p.age DESC`;
-  }
+    case "age_low_high":
+      query += ` ORDER BY p.age ASC`;
+      break;
 
-  else {
-    query += ` ORDER BY p.created_at DESC`;
+    case "age_high_low":
+      query += ` ORDER BY p.age DESC`;
+      break;
+
+    default:
+      query += ` ORDER BY p.created_at DESC`;
   }
 
   const result = await pool.query(query, values);
@@ -311,6 +321,21 @@ const addPet = async (data, userId) => {
 
     const pet = petResult.rows[0];
 
+const listingResult = await client.query(
+  `
+  INSERT INTO adoption_listings (
+    ngo_id,
+    pet_id,
+    status
+  )
+  VALUES ($1, $2, 'pending')
+  RETURNING listing_id
+  `,
+  [ngoId, pet.pet_id]
+);
+
+const listing_id = listingResult.rows[0].listing_id;
+
     // =====================================================
     // STEP 4: INSERT IMAGES
     // =====================================================
@@ -336,7 +361,10 @@ const addPet = async (data, userId) => {
       description: `Pet ${data.name} added by NGO ${ngoId}`,
     });
 
-    return pet;
+    return {
+  ...pet,
+  listing_id
+};
 
   } catch (err) {
     await client.query("ROLLBACK");
