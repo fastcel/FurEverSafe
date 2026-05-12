@@ -18,6 +18,19 @@ const submitApplication = async (req, res) => {
   }
 };
 
+
+const getApprovedApplicationForPet = async (req, res) => {
+  try {
+    const data = await adoptionService.getApprovedApplicationForPet(
+      req.user.id,
+      req.params.petId
+    );
+    return res.status(200).json(data);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+};
+
 const getUserApplications = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -173,6 +186,37 @@ const rejectApplication = async (req, res) => {
   }
 };
 
+const getListingById = async (req, res) => {
+  try {
+    const data = await adoptionService.getListingById(req.params.listingId);
+
+    if (!data) {
+      return res.status(404).json({ error: "Listing not found" });
+    }
+
+    return res.status(200).json(data);
+
+  } catch (err) {
+    console.log("🔥 LISTING FETCH ERROR:", err.message);
+
+    return res.status(500).json({
+      error: "Failed to fetch listing",
+    });
+  }
+};
+
+const cancelApplication = async (req, res) => {
+  try {
+    const result = await adoptionService.cancelApplication(
+      req.user.id,
+      req.params.id
+    );
+    return res.status(200).json({ message: "Application cancelled", data: result });
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+};
+
 module.exports = {
   submitApplication,
   getUserApplications,
@@ -181,4 +225,7 @@ module.exports = {
   getApplicationDetails,
   approveApplication,
   rejectApplication,
+  getListingById,
+  getApprovedApplicationForPet,
+  cancelApplication,
 };

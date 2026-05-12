@@ -266,11 +266,11 @@ export default function ReportAbuse() {
                     className="w-full p-3 border-2 border-black rounded bg-[#f8f5f0] text-sm appearance-none"
                   >
                     <option>Select Animal Type...</option>
-                    <option>Dog</option>
                     <option>Cat</option>
+                    <option>Dog</option>
                     <option>Bird</option>
-                    <option>Horse</option>
                     <option>Rabbit</option>
+                    <option>Horse</option>
                     <option>Cow</option>
                     <option>Chicken</option>
                     <option>Monkey</option>
@@ -293,9 +293,10 @@ export default function ReportAbuse() {
                           className={`
                             flex-1 py-2.5 px-3 border-2 border-black rounded text-sm font-bold
                             text-black transition-all duration-150 select-none ${bg}
-                            ${isSelected
-                              ? "scale-90 shadow-inner brightness-90 ring-2 ring-black ring-offset-1"
-                              : "hover:opacity-80 scale-100"
+                            ${
+                              isSelected
+                                ? "scale-90 shadow-inner brightness-90 ring-2 ring-black ring-offset-1"
+                                : "hover:opacity-80 scale-100"
                             }
                           `}
                         >
@@ -346,9 +347,10 @@ export default function ReportAbuse() {
                         className={`
                           absolute top-2 right-2 z-[1000] px-2 py-1 border text-[10px]
                           font-bold rounded flex items-center gap-1 transition
-                          ${repinMode
-                            ? "bg-purple-700 text-white border-purple-900"
-                            : "bg-white text-black border-gray-400 hover:bg-gray-50"
+                          ${
+                            repinMode
+                              ? "bg-purple-700 text-white border-purple-900"
+                              : "bg-white text-black border-gray-400 hover:bg-gray-50"
                           }
                         `}
                       >

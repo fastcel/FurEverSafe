@@ -27,7 +27,9 @@ import NGOAbuseReportDetails from "./pages/NGOAbuseReportDetails";
 import NGONotifications from "./pages/NGONotifications";
 
 const getRole = () => {
-  const raw = JSON.parse(localStorage.getItem("user"))?.role?.toLowerCase().trim();
+  const raw = JSON.parse(localStorage.getItem("user"))
+    ?.role?.toLowerCase()
+    .trim();
   return raw === "citizen" ? "user" : raw || "user";
 };
 
@@ -35,21 +37,21 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/dashboard" element={<CitizenDashboard />} />
-        <Route path="/adopt/:petName" element={<AdoptionForm />} />
+        <Route path="/adopt/:listingId" element={<AdoptionForm />} />
         <Route path="/adoptions" element={<AdoptionsPage />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/" element={<Login />} />
-        <Route path="/help-and-support" element={<HelpAndSupport />} />
-        {/* Citizen Dashboard */}
         <Route path="/citizen-dashboard" element={<CitizenDashboard />} />
-        <Route path="/faq" element={<FAQ />} />
-        {/* User Profile Flow */}
-        
         <Route path="/profile" element={<UserProfile role={getRole()} />} />
-        <Route path="/edit-profile" element={<EditProfile role={getRole()} />} />
+        <Route
+          path="/edit-profile"
+          element={<EditProfile role={getRole()} />}
+        />
         <Route path="/ngo-profile" element={<UserProfile role={getRole()} />} />
-        <Route path="/ngo-edit-profile" element={<EditProfile role={getRole()} />} />
+        <Route
+          path="/ngo-edit-profile"
+          element={<EditProfile role={getRole()} />}
+        />
         <Route path="/delete-account" element={<DeleteAccount />} />
         <Route path="/ngo-delete-account" element={<NGODeleteAccount />} />
         <Route path="/admin/users" element={<AdminUsers />} />

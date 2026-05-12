@@ -65,9 +65,11 @@ export default function SignupPage() {
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
       if (role === "citizen") {
-        window.location.href = "/dashboard";
-      } else {
+        window.location.href = "/citizen-dashboard";
+      } else if (role === "ngo"){
         window.location.href = "/ngo-dashboard";
+      } else if (role === "admin"){
+        window.location.href = "/admin/users";
       }
 
     } catch (err) {
@@ -221,7 +223,7 @@ export default function SignupPage() {
             onClick={handleSubmit}
             disabled={loading}
             className={`w-full font-bold py-2.5 rounded-xl text-white transition
-              ${loading ? "bg-gray-400" : "bg-[#d94f8a] hover:bg-[#c43f7a]"}`}
+            ${loading ? "bg-gray-400" : "bg-[#d94f8a] hover:bg-[#c43f7a]"}`}
           >
             {loading ? "Signing Up..." : "Create Account"}
           </button>

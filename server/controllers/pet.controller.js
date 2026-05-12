@@ -89,10 +89,28 @@ const updatePetPatch = async (req, res) => {
   }
 };
 
+const getUserAppliedPets = async (req, res) => {
+  try {
+    const pets = await petService.getUserAppliedPets(req.user.id);
+
+    return res.status(200).json({
+      message: "User applied pets fetched successfully",
+      pets,
+    });
+  } catch (err) {
+    console.log("🔥 USER APPLIED PETS ERROR:", err.message);
+
+    return res.status(500).json({
+      error: "Failed to fetch applied pets",
+    });
+  }
+};
+
 module.exports = {
   getAllPets,
   getPetById,
   addPet,
   getNgoPets,
   updatePetPatch,
+  getUserAppliedPets,
 };

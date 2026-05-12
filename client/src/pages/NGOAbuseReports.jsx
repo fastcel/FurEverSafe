@@ -78,7 +78,7 @@ export default function NGOAbuseReports() {
             </button>
           </div>
 
-          <h1 className="text-2xl font-bold text-[#5e174f] mb-6">
+          <h1 className="text-3xl font-black text-primary mb-6">
             {activeTab === "current" ? "Current Abuse Reports" : "Previous Abuse Reports"}
           </h1>
 
