@@ -19,7 +19,7 @@ const PetCard = ({ name, age, gender, breed, location, image, onClick, isAdmin, 
     return (
         <div
             onClick={onClick}
-            className="bg-[#DED9C4] p-3 rounded-sm w-[210px] cursor-pointer transition-transform hover:scale-105 active:scale-95 border border-transparent hover:border-black/10"
+            className="bg-[#DED9C4] p-3 rounded-sm w-[300px] cursor-pointer transition-transform hover:scale-105 active:scale-95 border border-transparent hover:border-black/10"
         >
             <img src={image} alt={name} className="w-full h-36 object-cover mb-3" />
 

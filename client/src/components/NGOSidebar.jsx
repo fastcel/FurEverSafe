@@ -1,45 +1,76 @@
-import { Link, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
+
+const NAV_ITEMS = [
+  { name: "Home", path: "/ngo-dashboard", isActive: (p) => p === "/ngo-dashboard" },
+  { name: "Adoption Requests", path: "/ngo-adoptions", isActive: (p) => p === "/ngo-adoptions" },
+  {
+    name: "Abuse Reports",
+    path: "/ngo-abuse-reports",
+    isActive: (p) => p === "/ngo-abuse-reports" || p.startsWith("/ngo-abuse-reports/"),
+  },
+  {
+    name: "Notifications",
+    path: "/ngo-notifications",
+    isActive: (p) => p === "/ngo-notifications" || p.startsWith("/ngo-notifications/"),
+  },
+  {
+    name: "Profile",
+    path: "/profile",
+    isActive: (p) =>
+      p === "/profile" ||
+      p === "/ngo-profile" ||
+      p === "/edit-profile" ||
+      p === "/ngo-edit-profile" ||
+      p === "/delete-account" ||
+      p === "/ngo-delete-account",
+  },
+];
 
 export default function NGOSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const path = location.pathname;
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    sessionStorage.clear();
+    navigate("/");
+  };
+
   return (
-    <div className="w-64 bg-[#dcd3c1] flex flex-col font-bold">
-      <div className="flex flex-col items-center pt-6 pb-6">
-        <img src={logo} alt="FurEver Safe" className="w-32 h-32 object-contain" />
+    <div className="w-64 min-h-screen bg-secondary font-bold flex flex-col justify-between">
+      <div className="flex flex-col items-center pt-6 pb-2">
+        <img src={logo} alt="FurEver Safe" className="w-35 h-35 object-contain mb-2" />
       </div>
 
-      <nav className="flex flex-col gap-6 mt-4 flex-1">
-        <Link 
-          to="/ngo-home" 
-          className={`w-full py-3 text-center text-xl font-bold block ${path === '/ngo-home' ? 'bg-[#c6287c] text-white' : 'bg-[#b5b5b5] text-[#c6287c]'}`}
-        >
-          Home
-        </Link>
-        <Link 
-          to="/ngo-adoption-requests" 
-          className={`w-full py-3 text-center text-xl font-bold block ${path === '/ngo-adoption-requests' ? 'bg-[#c6287c] text-white' : 'bg-[#b5b5b5] text-[#c6287c]'}`}
-        >
-          Adoption Requests
-        </Link>
-        <Link 
-          to="/ngo-abuse-reports" 
-          className={`w-full py-3 text-center text-xl font-bold block ${path.includes('/ngo-abuse-reports') ? 'bg-[#c6287c] text-white' : 'bg-[#b5b5b5] text-[#c6287c]'}`}
-        >
-          Abuse Reports
-        </Link>
-        <Link 
-          to="/ngo-notifications" 
-          className={`w-full py-3 text-center text-xl font-bold block ${path === '/ngo-notifications' ? 'bg-[#c6287c] text-white' : 'bg-[#b5b5b5] text-[#c6287c]'}`}
-        >
-          Notifications
-        </Link>
+      <nav className="flex-1 flex flex-col mt-2">
+        {NAV_ITEMS.map((item) => {
+          const active = item.isActive(path);
+          return (
+            <button
+              key={item.name}
+              type="button"
+              onClick={() => navigate(item.path)}
+              className={
+                active
+                  ? "w-full py-3.5 text-center text-[20px] font-bold bg-primary text-white"
+                  : "w-full py-3.5 text-center text-[20px] font-semibold text-[#4a3f35] hover:bg-[#b8ae9e]"
+              }
+            >
+              {item.name}
+            </button>
+          );
+        })}
       </nav>
 
-      <div className="mb-8 mt-auto">
-        <button className="w-full py-3 bg-[#b5b5b5] text-[#d32f2f] text-xl font-bold">
+      <div className="bg-secondary flex flex-col items-center text-center">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="w-full py-3.5 text-[20px] font-bold cursor-pointer bg-red-600 text-white hover:bg-red-700"
+        >
           Logout
         </button>
       </div>

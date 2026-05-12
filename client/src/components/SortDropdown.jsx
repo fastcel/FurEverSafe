@@ -1,6 +1,6 @@
-import React from 'react';
+import React from "react";
 
-const SortDropdown = ({ onClose }) => {
+const SortDropdown = ({ onClose, onSelect }) => {
   const options = ["Newest First", "Oldest First", "Closest", "Alphebetical"];
 
   return (
@@ -10,9 +10,13 @@ const SortDropdown = ({ onClose }) => {
       </div>
       <div className="flex flex-col">
         {options.map((opt) => (
-          <button 
+          <button
             key={opt}
-            onClick={onClose}
+            type="button"
+            onClick={() => {
+              onSelect?.(opt);
+              onClose();
+            }}
             className="py-3 px-4 text-center border-b border-black last:border-b-0 hover:bg-[#DED9C4] transition-colors"
           >
             {opt}

@@ -22,7 +22,7 @@ export default function UserNotifications() {
   const [milestones, setMilestones] = useState(null);
 
 
-useEffect(() => {
+  useEffect(() => {
     const fetchUserData = async () => {
       try {
         setLoading(true);
@@ -72,7 +72,7 @@ useEffect(() => {
     alert(message);
   };
 
- const renderNotifications = () => (
+  const renderNotifications = () => (
     <div className="bg-[#bfb5a5] p-8 rounded-xl border-[3px] border-black shadow-sm w-full mx-auto mt-6">
       <div className="space-y-4">
         {/* MODIFIED: Mapping real 'notifications' state instead of dummy data */}
@@ -115,6 +115,7 @@ useEffect(() => {
           { label: "Total Points", value: totalPoints },
           { label: "Pets Adopted", value: breakdown.adoptions.count },
           { label: "Reports Submitted", value: breakdown.abuseReports.count }
+          
         ].map((stat) => (
           <div key={stat.label} className="flex-1 bg-[#dcd3c1] p-8 rounded-xl text-center border-[3px] border-black shadow-sm">
             <p className="text-5xl font-black text-primary mb-1">{stat.value}</p>
@@ -209,10 +210,9 @@ useEffect(() => {
             </p>
           </div>
           <div className="flex items-center gap-6">
-            <span className={`px-6 py-2 rounded-lg font-black text-lg border-[3px] border-black shadow-sm ${
-              report.status === 'under_review' ? 'bg-[#f4e4bc]' :
-              report.status === 'action_taken' ? 'bg-success text-white' : 'bg-gray-200'
-            }`}>
+            <span className={`px-6 py-2 rounded-lg font-black text-lg border-[3px] border-black shadow-sm ${report.status === 'under_review' ? 'bg-[#f4e4bc]' :
+                report.status === 'action_taken' ? 'bg-success text-white' : 'bg-gray-200'
+              }`}>
               {report.status.replace('_', ' ').toUpperCase()}
             </span>
             <ChevronRightIcon className="text-[#4a3f35] scale-125" />
@@ -282,7 +282,7 @@ useEffect(() => {
             <div className="space-y-8 relative">
               <div className="absolute left-4 top-3 bottom-3 w-0.5 bg-black opacity-30"></div>
 
-                        {[
+           {[
             { 
               label: "Report Submitted", 
               date: new Date(selectedReport.created_at).toLocaleDateString(), 
@@ -352,6 +352,7 @@ useEffect(() => {
 
         {loading ? (
            <h1 className="text-3xl font-black animate-pulse">Loading Notifications...</h1>
+     
         ) : (
           <>
             <h1 className="text-4xl font-black text-primary mb-4">

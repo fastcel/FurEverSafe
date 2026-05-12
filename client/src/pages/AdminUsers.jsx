@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import Layout from "../components/Layout";
-import { fetchAllUsers, updateUser, deleteUser } from "../services/adminService";
+import {
+  fetchAllUsers,
+  updateUser,
+  deleteUser,
+} from "../services/adminService";
 
 // Map DB role values → display labels (and back)
 const ROLE_DISPLAY = {
@@ -15,19 +19,30 @@ const ROLE_DB = {
 };
 
 export default function AdminUsers() {
-  const [users, setUsers]           = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState(null);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Edit modal state
-  const [editUser, setEditUser]     = useState(null);
-  const [editForm, setEditForm]     = useState({});
-  const [saving, setSaving]         = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [editUser, setEditUser] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [modal, setModal] = useState({
+    open: false,
+    type: "", // "success" | "error"
+    message: "",
+  });
+  const showModal = (type, message) => {
+    setModal({
+      open: true,
+      type,
+      message,
+    });
+  };
 
   // Delete modal state
   const [userToDelete, setUserToDelete] = useState(null);
-  const [deleting, setDeleting]         = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // ── Fetch users on mount ──────────────────────────────────────────────────
   useEffect(() => {
@@ -49,11 +64,11 @@ export default function AdminUsers() {
   const openEdit = (user) => {
     setEditUser(user);
     setEditForm({
-      name:           user.name,
-      email:          user.email,
+      name: user.name,
+      email: user.email,
       contact_number: user.contact_number,
       // convert DB role → display label for the <select>
-      role:           ROLE_DISPLAY[user.role] ?? user.role,
+      role: ROLE_DISPLAY[user.role] ?? user.role,
     });
   };
 
@@ -61,20 +76,20 @@ export default function AdminUsers() {
     try {
       setSaving(true);
       const payload = {
-        name:           editForm.name,
-        email:          editForm.email,
+        name: editForm.name,
+        email: editForm.email,
         contact_number: editForm.contact_number,
         // convert display label → DB value before sending
-        role:           ROLE_DB[editForm.role] ?? editForm.role,
+        role: ROLE_DB[editForm.role] ?? editForm.role,
       };
       const updated = await updateUser(editUser.user_id, payload);
       setUsers((prev) =>
-        prev.map((u) => (u.user_id === updated.user_id ? updated : u))
+        prev.map((u) => (u.user_id === updated.user_id ? updated : u)),
       );
       setEditUser(null);
-      setShowSuccess(true);
+      showModal("success", "User information successfully updated!");
     } catch (err) {
-      alert(err.message);
+      showModal("error", err.response?.data?.message || err.message);
     } finally {
       setSaving(false);
     }
@@ -86,10 +101,13 @@ export default function AdminUsers() {
       setDeleting(true);
       await deleteUser(userToDelete.user_id);
       // Remove from local list (soft-delete keeps it in DB but we hide it)
-      setUsers((prev) => prev.filter((u) => u.user_id !== userToDelete.user_id));
+      setUsers((prev) =>
+        prev.filter((u) => u.user_id !== userToDelete.user_id),
+      );
       setUserToDelete(null);
+      showModal("success", "User deleted successfully!");
     } catch (err) {
-      alert(err.message);
+      showModal("error", err.response?.data?.message || err.message);
     } finally {
       setDeleting(false);
     }
@@ -99,16 +117,11 @@ export default function AdminUsers() {
   return (
     <Layout>
       <div className="w-full min-h-screen bg-[#f0ebe0] flex flex-col py-10 px-12">
-
         <h1 className="text-3xl font-bold text-[#3a3028] mb-6">Users</h1>
 
         {/* Loading / Error states */}
-        {loading && (
-          <p className="text-[#7a6a5a] text-sm">Loading users…</p>
-        )}
-        {error && (
-          <p className="text-red-500 text-sm">Error: {error}</p>
-        )}
+        {loading && <p className="text-[#7a6a5a] text-sm">Loading users…</p>}
+        {error && <p className="text-red-500 text-sm">Error: {error}</p>}
 
         {/* Table */}
         {!loading && !error && (
@@ -132,7 +145,9 @@ export default function AdminUsers() {
                   >
                     <td className="py-2.5 px-3 text-center">{user.user_id}</td>
                     <td className="py-2.5 px-3 text-center">{user.name}</td>
-                    <td className="py-2.5 px-3 text-center">{user.contact_number}</td>
+                    <td className="py-2.5 px-3 text-center">
+                      {user.contact_number}
+                    </td>
                     <td className="py-2.5 px-3 text-center">{user.email}</td>
                     <td className="py-2.5 px-3 text-center">
                       {ROLE_DISPLAY[user.role] ?? user.role}
@@ -141,11 +156,15 @@ export default function AdminUsers() {
                       <button
                         onClick={() => openEdit(user)}
                         className="text-[#3a3028] hover:text-[#d63384] mr-3 text-base"
-                      >✏️</button>
+                      >
+                        ✏️
+                      </button>
                       <button
                         onClick={() => setUserToDelete(user)}
                         className="text-red-500 hover:text-red-700 text-base"
-                      >🗑️</button>
+                      >
+                        🗑️
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -159,17 +178,16 @@ export default function AdminUsers() {
       {editUser && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl w-[420px] overflow-hidden">
-
-            <div className="bg-[#f8c8d8] py-3 text-center">
-              <h2 className="text-lg font-bold text-[#3a3028]">User Profile</h2>
+            <div className="bg-[#d63384] py-3 text-center">
+              <h2 className="text-lg font-bold text-white">User Profile</h2>
             </div>
 
             <div className="p-6 space-y-3">
               {[
-                { label: "Name:",         key: "name",           type: "text" },
-                { label: "Email:",        key: "email",          type: "email" },
+                { label: "Name:", key: "name", type: "text" },
+                { label: "Email:", key: "email", type: "email" },
                 { label: "Phone number:", key: "contact_number", type: "tel" },
-                { label: "Role:",         key: "role",           type: "select" },
+                { label: "Role:", key: "role", type: "select" },
               ].map(({ label, key, type }) => (
                 <div key={key} className="flex items-center gap-3">
                   <span className="text-sm font-semibold text-[#3a3028] w-32 text-right shrink-0">
@@ -197,7 +215,9 @@ export default function AdminUsers() {
                         }
                         className="flex-1 px-3 py-1.5 text-sm bg-transparent outline-none"
                       />
-                      <span className="px-2 text-[#7a6a5a] text-xs cursor-pointer">✏️</span>
+                      <span className="px-2 text-[#7a6a5a] text-xs cursor-pointer">
+                        ✏️
+                      </span>
                     </div>
                   )}
                 </div>
@@ -208,7 +228,9 @@ export default function AdminUsers() {
               <button
                 onClick={() => setEditUser(null)}
                 className="mr-3 text-sm text-[#7a6a5a] hover:underline"
-              >Cancel</button>
+              >
+                Cancel
+              </button>
               <button
                 onClick={saveEdit}
                 disabled={saving}
@@ -221,17 +243,18 @@ export default function AdminUsers() {
         </div>
       )}
 
-      {/* ── Success Modal ── */}
-      {showSuccess && (
+      {modal.open && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4 w-80">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-4xl">✅</div>
-            <p className="text-[#d63384] font-bold text-base text-center">
-              User information successfully updated!
-            </p>
+            <div className="text-4xl">
+              {modal.type === "error" ? "❌" : "✅"}
+            </div>
+
+            <p className="text-center text-sm font-medium">{modal.message}</p>
+
             <button
-              onClick={() => setShowSuccess(false)}
-              className="bg-[#d63384] hover:bg-[#b02770] text-white font-bold px-10 py-2 rounded"
+              onClick={() => setModal({ open: false, type: "", message: "" })}
+              className="bg-[#d63384] text-white px-6 py-2 rounded"
             >
               Close
             </button>
@@ -243,11 +266,16 @@ export default function AdminUsers() {
       {userToDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4 w-96">
-            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center text-4xl">❗</div>
-            <h3 className="text-[#d63384] font-bold text-lg text-center">Delete this user?</h3>
+            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center text-4xl">
+              ❗
+            </div>
+            <h3 className="text-[#d63384] font-bold text-lg text-center">
+              Delete this user?
+            </h3>
             <p className="text-[#3a3028] text-sm text-center">
-              Are you sure you want to delete <strong>{userToDelete.name}</strong>?
-              This action is permanent and will deactivate the user's account.
+              Are you sure you want to delete{" "}
+              <strong>{userToDelete.name}</strong>? This action is permanent and
+              will deactivate the user's account.
             </p>
             <div className="flex gap-4 mt-2">
               <button
