@@ -61,6 +61,25 @@ const submitApplication = async (data, userId) => {
       source_id: application.application_id
     });
 
+
+    const ngoResult = await pool.query(
+    `SELECT n.user_id 
+    FROM adoption_listings al
+    JOIN ngos n ON n.ngo_id = al.ngo_id
+    WHERE al.listing_id = $1`,
+    [data.listing_id]
+  );
+
+  if (ngoResult.rows.length) {
+    await createNotification({
+      user_id: ngoResult.rows[0].user_id,
+      type: "adoption",
+      message: `📋 A new adoption application has been submitted for your listing`,
+      source_type: "adoption_application",
+      source_id: application.application_id
+    });
+  }
+
     await auditService.createAuditLog({
       admin_id: userId,
       action: "ADOPTION_APPLY",

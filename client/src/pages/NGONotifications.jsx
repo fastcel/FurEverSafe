@@ -46,7 +46,7 @@ export default function NGONotifications() {
     <Layout>
       <div className="w-full min-h-screen bg-[#f6f1e8] p-10">
         <div className="max-w-[1440px] mx-auto">
-          <h1 className="text-5xl font-black text-purple-900 mb-8">
+          <h1 className="text-3xl font-black text-primary mb-6">
             Notifications
           </h1>
 
