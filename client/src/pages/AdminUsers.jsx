@@ -6,7 +6,6 @@ import {
   deleteUser,
 } from "../services/adminService";
 
-// Map DB role values → display labels (and back)
 const ROLE_DISPLAY = {
   citizen: "Citizen",
   ngo: "Ngo Representative",
@@ -23,13 +22,12 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Edit modal state
   const [editUser, setEditUser] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [saving, setSaving] = useState(false);
   const [modal, setModal] = useState({
     open: false,
-    type: "", // "success" | "error"
+    type: "",
     message: "",
   });
   const showModal = (type, message) => {
@@ -40,11 +38,9 @@ export default function AdminUsers() {
     });
   };
 
-  // Delete modal state
   const [userToDelete, setUserToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  // ── Fetch users on mount ──────────────────────────────────────────────────
   useEffect(() => {
     const loadUsers = async () => {
       try {
@@ -60,14 +56,12 @@ export default function AdminUsers() {
     loadUsers();
   }, []);
 
-  // ── Edit helpers ──────────────────────────────────────────────────────────
   const openEdit = (user) => {
     setEditUser(user);
     setEditForm({
       name: user.name,
       email: user.email,
       contact_number: user.contact_number,
-      // convert DB role → display label for the <select>
       role: ROLE_DISPLAY[user.role] ?? user.role,
     });
   };
@@ -79,7 +73,6 @@ export default function AdminUsers() {
         name: editForm.name,
         email: editForm.email,
         contact_number: editForm.contact_number,
-        // convert display label → DB value before sending
         role: ROLE_DB[editForm.role] ?? editForm.role,
       };
       const updated = await updateUser(editUser.user_id, payload);
@@ -95,12 +88,10 @@ export default function AdminUsers() {
     }
   };
 
-  // ── Delete helpers ────────────────────────────────────────────────────────
   const confirmDelete = async () => {
     try {
       setDeleting(true);
       await deleteUser(userToDelete.user_id);
-      // Remove from local list (soft-delete keeps it in DB but we hide it)
       setUsers((prev) =>
         prev.filter((u) => u.user_id !== userToDelete.user_id),
       );
@@ -113,17 +104,14 @@ export default function AdminUsers() {
     }
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <Layout>
       <div className="w-full min-h-screen bg-[#f0ebe0] flex flex-col py-10 px-12">
         <h1 className="text-3xl font-bold text-[#3a3028] mb-6">Users</h1>
 
-        {/* Loading / Error states */}
         {loading && <p className="text-[#7a6a5a] text-sm">Loading users…</p>}
         {error && <p className="text-red-500 text-sm">Error: {error}</p>}
 
-        {/* Table */}
         {!loading && !error && (
           <div className="w-full bg-[#e0d9cc] rounded-2xl shadow-sm overflow-hidden">
             <table className="w-full text-sm text-[#3a3028]">
@@ -174,7 +162,6 @@ export default function AdminUsers() {
         )}
       </div>
 
-      {/* ── Edit Modal ── */}
       {editUser && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl w-[420px] overflow-hidden">
@@ -262,7 +249,6 @@ export default function AdminUsers() {
         </div>
       )}
 
-      {/* ── Delete Confirmation Modal ── */}
       {userToDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4 w-96">

@@ -30,10 +30,7 @@ const PetModal = ({ pet, onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto border-2 border-black bg-[#EDEFD7]">
-        {/* Header */}
-        {/* Header */}
         <div className="relative flex items-center justify-between border-b-2 border-black bg-[#DED9C4] px-6 py-3">
-          {/* LEFT - Adopt button */}
           <div className="w-1/3 flex justify-start">
             <button
               onClick={() => navigate(`/adopt/${pet.pet_id}`)}
@@ -43,7 +40,6 @@ const PetModal = ({ pet, onClose }) => {
             </button>
           </div>
 
-          {/* CENTER - Title */}
           <div className="w-1/3 text-center">
             <h2 className="text-3xl font-bold tracking-tight text-[#6A1B9A]">
               {pet.name}
@@ -53,7 +49,6 @@ const PetModal = ({ pet, onClose }) => {
             </h2>
           </div>
 
-          {/* RIGHT - Close button */}
           <div className="w-1/3 flex justify-end">
             <button
               onClick={onClose}
@@ -64,11 +59,8 @@ const PetModal = ({ pet, onClose }) => {
           </div>
         </div>
 
-        {/* Main Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
-          {/* LEFT SIDE - Single Image */}
           <div className="flex flex-col gap-4">
-            {/* Image */}
             <div className="border-2 border-black bg-[#F5F3E7] p-3">
               <img
                 src={pet.images?.[0] || ""}
@@ -77,7 +69,6 @@ const PetModal = ({ pet, onClose }) => {
               />
             </div>
 
-            {/* Vaccination */}
             <div className="bg-[#F5F3E7] border-2 border-black py-4 px-6 text-center">
               <span className="text-3xl block mb-2">{vaccine.icon}</span>
 
@@ -87,7 +78,6 @@ const PetModal = ({ pet, onClose }) => {
             </div>
           </div>
 
-          {/* RIGHT SIDE */}
           <div className="flex flex-col gap-6 pr-2 md:pr-4">
             <div className="bg-[#F5F3E7] border-2 border-black p-6 h-full">
               <p className="font-bold text-sm uppercase tracking-widest text-[#C2185B] mb-4">
@@ -100,10 +90,8 @@ const PetModal = ({ pet, onClose }) => {
               </p>
             </div>
 
-            {/* Pet Details */}
             <div className="bg-[#F5F3E7] border-2 border-black p-6">
               <div className="grid grid-cols-2 gap-8 text-base">
-                {/* Left Column */}
                 <div className="space-y-8">
                   <div className="border-b-2 border-black pb-3">
                     <p className="font-bold opacity-60 mb-2">Age</p>
@@ -120,7 +108,6 @@ const PetModal = ({ pet, onClose }) => {
                   </div>
                 </div>
 
-                {/* Right Column */}
                 <div className="space-y-8 border-l-2 border-black pl-8">
                   <div className="border-b-2 border-black pb-3">
                     <p className="font-bold opacity-60 mb-2">NGO</p>

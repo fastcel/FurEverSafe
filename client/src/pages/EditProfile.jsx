@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 
-// ─── role-specific field configs ───────────────────────────────────────────
 const PROFILE_FIELDS = {
   user: [
     { label: "Name:", key: "name", type: "text" },
@@ -30,7 +29,7 @@ export default function EditProfile({ role = "user", initialData }) {
   });
   const [modal, setModal] = useState({
     open: false,
-    type: "", // "error" / "success"
+    type: "",
     message: "",
   });
   const [isSaving, setIsSaving] = useState(false);
@@ -49,9 +48,6 @@ export default function EditProfile({ role = "user", initialData }) {
   const toggle = (field) =>
     setShowPassword((prev) => ({ ...prev, [field]: !prev[field] }));
 
-  // ─────────────────────────────────────────────
-  // FETCH PROFILE FROM BACKEND
-  // ─────────────────────────────────────────────
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -84,9 +80,6 @@ export default function EditProfile({ role = "user", initialData }) {
     fetchProfile();
   }, []);
 
-  // ─────────────────────────────────────────────
-  // SAVE PROFILE (PUT API)
-  // ─────────────────────────────────────────────
   const handleSave = async () => {
     try {
       setIsSaving(true);
@@ -148,7 +141,6 @@ export default function EditProfile({ role = "user", initialData }) {
           </button>
         </div>
 
-        {/* Editable Info Card */}
         <div className="w-full bg-[#e0d9cc] rounded-xl p-6 mb-5">
           <div className="grid grid-cols-[150px_1fr] gap-x-4 gap-y-3 text-sm text-[#3a3028]">
             {profileFields.map(({ label, key, type }) => (
@@ -170,7 +162,6 @@ export default function EditProfile({ role = "user", initialData }) {
           </div>
         </div>
 
-        {/* Change Password Card */}
         <div className="w-full bg-[#e0d9cc] rounded-xl p-6 mb-5">
           <h2 className="text-center font-bold text-[#3a3028] mb-4">
             Change Password
@@ -223,7 +214,6 @@ export default function EditProfile({ role = "user", initialData }) {
           </div>
         </div>
 
-        {/* SAVE BUTTON → NOW CONNECTED */}
         <button
           onClick={handleSave}
           disabled={isSaving}

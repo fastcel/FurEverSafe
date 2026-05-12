@@ -28,12 +28,11 @@ export default function NGOAbuseReportDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Modal state
   const [modal, setModal] = useState({
     show: false,
-    type: "", // "success" | "error"
+    type: "",
     message: "",
-    redirect: false, // whether to navigate after closing
+    redirect: false,
   });
 
   const showModal = (type, message, redirect = false) =>
@@ -108,7 +107,6 @@ export default function NGOAbuseReportDetails() {
     <Layout>
       <div className="flex bg-[#f4f1ea]">
         <div className="flex-1 p-8 pl-10 pr-12">
-          {/* Back button */}
           <div className="flex gap-6 mb-8">
             <button
               onClick={() => navigate("/ngo-abuse-reports")}
@@ -122,10 +120,8 @@ export default function NGOAbuseReportDetails() {
             Case#{report.tracking_id}
           </h1>
 
-          {/* Details Card */}
           <div className="border-[3px] border-black bg-[#e8e0d0] rounded-md p-10 flex flex-col min-h-[700px]">
             <div className="flex gap-12 flex-1">
-              {/* Left Column */}
               <div className="flex-1 flex flex-col justify-between">
                 <div>
                   <p className="text-[#d32f2f] font-bold text-2xl mb-8 flex items-center gap-3">
@@ -190,7 +186,6 @@ export default function NGOAbuseReportDetails() {
                 </div>
               </div>
 
-              {/* Right Column */}
               <div className="flex-1 flex flex-col justify-between ml-6">
                 <div>
                   <p className="font-bold text-xl mb-3">
@@ -259,7 +254,6 @@ export default function NGOAbuseReportDetails() {
           </div>
         </div>
 
-        {/* ── Success / Error Modal ── */}
         {modal.show && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
             <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4 w-80">

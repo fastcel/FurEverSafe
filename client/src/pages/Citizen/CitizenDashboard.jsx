@@ -108,7 +108,6 @@ export default function CitizenDashboard() {
           ...filters,
         };
 
-        // remove empty fields
         Object.keys(params).forEach((key) => {
           if (!params[key]) {
             delete params[key];
@@ -146,16 +145,12 @@ export default function CitizenDashboard() {
 
   return (
     <Layout>
-      {/* Background color for the main content area to match Figma's soft cream/beige */}
       <div className="w-full min-h-screen p-8 bg-[#F5F1E3]">
         {selectedPet && (
           <PetModal pet={selectedPet} onClose={() => setSelectedPet(null)} />
         )}
 
-        {/* --- HEADER SECTION --- */}
-        {/* Added flex-nowrap and specific gap to match Figma's alignment */}
         <div className="flex items-center justify-between gap-6 mb-10 w-full">
-          {/* Search Bar: Reduced height and rounded borders like Figma */}
           <div className="relative flex-1">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">
               🔍
@@ -169,7 +164,6 @@ export default function CitizenDashboard() {
             />
           </div>
 
-          {/* Buttons: Added shadow, rounded corners, and specific Figma Pink color */}
           <div className="flex gap-4">
             <div className="relative">
               <button
@@ -222,7 +216,6 @@ export default function CitizenDashboard() {
           </div>
         </div>
 
-        {/* --- PETS CONTENT --- */}
         <div className="w-full">
           {loading ? (
             <div className="text-center py-20 font-bold text-xl text-pink-700 animate-pulse">
@@ -237,12 +230,10 @@ export default function CitizenDashboard() {
               {animalTypes.length > 0 ? (
                 animalTypes.map((type) => (
                   <section key={type} className="mb-14">
-                    {/* Header: Dark purple/black color and proper margin */}
                     <h2 className="text-3xl font-black mb-8 text-[#3A1D44] capitalize">
                       {type}s
                     </h2>
 
-                    {/* Grid Layout: Using 4 columns for large screens to match Figma */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                       {groupedPets[type].map((pet) => (
                         <PetCard

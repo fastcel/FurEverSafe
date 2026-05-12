@@ -20,7 +20,7 @@ const PetCard = ({
   const handleButtonClick = (e) => {
     e.stopPropagation();
 
-    if (isApplied) return; // 👈 BLOCK ACTION
+    if (isApplied) return;
 
     if (isAdmin) {
       if (onEdit) onEdit();

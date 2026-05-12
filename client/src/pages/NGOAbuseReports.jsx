@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "../components/Layout";
-import { fetchNgoReports, acceptCase, dismissCase } from "../services/abuseService";
+import {
+  fetchNgoReports,
+  acceptCase,
+  dismissCase,
+} from "../services/abuseService";
 
 export default function NGOAbuseReports() {
   const [reports, setReports] = useState([]);
@@ -9,10 +13,9 @@ export default function NGOAbuseReports() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("current");
 
-  // Modal state
   const [modal, setModal] = useState({
     show: false,
-    type: "",      // "success" | "error"
+    type: "",
     message: "",
   });
 
@@ -61,8 +64,6 @@ export default function NGOAbuseReports() {
     <Layout>
       <div className="flex min-h-screen bg-[#f4f1ea]">
         <div className="flex-1 p-8 pl-10 pr-12">
-
-          {/* Tabs */}
           <div className="flex gap-4 mb-6">
             <button
               onClick={() => setActiveTab("current")}
@@ -79,34 +80,54 @@ export default function NGOAbuseReports() {
           </div>
 
           <h1 className="text-3xl font-black text-primary mb-6">
-            {activeTab === "current" ? "Current Abuse Reports" : "Previous Abuse Reports"}
+            {activeTab === "current"
+              ? "Current Abuse Reports"
+              : "Previous Abuse Reports"}
           </h1>
 
-          {/* Table */}
           <div className="max-h-[600px] overflow-y-auto border-[3px] border-black bg-[#e0e0e0]">
             {loading ? (
-              <div className="p-8 text-center text-xl font-bold">Loading reports...</div>
+              <div className="p-8 text-center text-xl font-bold">
+                Loading reports...
+              </div>
             ) : error ? (
-              <div className="p-8 text-center text-red-600 font-bold">Error: {error}</div>
+              <div className="p-8 text-center text-red-600 font-bold">
+                Error: {error}
+              </div>
             ) : reports.length === 0 ? (
-              <div className="p-8 text-center text-lg italic text-gray-600">No reports found.</div>
+              <div className="p-8 text-center text-lg italic text-gray-600">
+                No reports found.
+              </div>
             ) : (
               <table className="w-full border-collapse">
                 <thead className="sticky top-0 bg-[#e0e0e0] z-10">
                   <tr>
-                    <th className="border-[3px] border-black p-4 text-xl">ID</th>
-                    <th className="border-[3px] border-black p-4 text-xl">Type</th>
-                    <th className="border-[3px] border-black p-4 text-xl">Date</th>
-                    <th className="border-[3px] border-black p-4 text-xl">Status</th>
-                    <th className="border-[3px] border-black p-4 text-xl">Details</th>
+                    <th className="border-[3px] border-black p-4 text-xl">
+                      ID
+                    </th>
+                    <th className="border-[3px] border-black p-4 text-xl">
+                      Type
+                    </th>
+                    <th className="border-[3px] border-black p-4 text-xl">
+                      Date
+                    </th>
+                    <th className="border-[3px] border-black p-4 text-xl">
+                      Status
+                    </th>
+                    <th className="border-[3px] border-black p-4 text-xl">
+                      Details
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {reports.map((report) => (
                     <tr key={report.report_id} className="text-center">
-                      <td className="border-[3px] border-black p-4 text-lg font-medium">{report.tracking_id}</td>
+                      <td className="border-[3px] border-black p-4 text-lg font-medium">
+                        {report.tracking_id}
+                      </td>
                       <td className="border-[3px] border-black p-4 text-lg text-[#5e174f] font-semibold">
-                        <span className="text-[#d32f2f] mr-2">⚠️</span>{report.pet_type}
+                        <span className="text-[#d32f2f] mr-2">⚠️</span>
+                        {report.pet_type}
                       </td>
                       <td className="border-[3px] border-black p-4 text-lg text-[#5e174f] font-semibold">
                         {new Date(report.abuse_datetime).toLocaleDateString()}
@@ -128,7 +149,9 @@ export default function NGOAbuseReports() {
                             </button>
                           </div>
                         ) : (
-                          <span className={`font-bold capitalize ${report.status === "action_taken" ? "text-green-600" : "text-red-600"}`}>
+                          <span
+                            className={`font-bold capitalize ${report.status === "action_taken" ? "text-green-600" : "text-red-600"}`}
+                          >
                             {report.status.replace("_", " ")}
                           </span>
                         )}
@@ -150,16 +173,19 @@ export default function NGOAbuseReports() {
         </div>
       </div>
 
-      {/* ── Success / Error Modal ── */}
       {modal.show && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4 w-80">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center text-4xl
-              ${modal.type === "success" ? "bg-green-100" : "bg-red-100"}`}>
+            <div
+              className={`w-16 h-16 rounded-full flex items-center justify-center text-4xl
+              ${modal.type === "success" ? "bg-green-100" : "bg-red-100"}`}
+            >
               {modal.type === "success" ? "✅" : "❌"}
             </div>
-            <p className={`font-bold text-base text-center
-              ${modal.type === "success" ? "text-green-700" : "text-red-600"}`}>
+            <p
+              className={`font-bold text-base text-center
+              ${modal.type === "success" ? "text-green-700" : "text-red-600"}`}
+            >
               {modal.message}
             </p>
             <button

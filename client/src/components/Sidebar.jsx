@@ -98,7 +98,6 @@ export default function Sidebar() {
 
   return (
     <div className="w-64 min-h-screen bg-secondary font-bold flex flex-col justify-between">
-      {/* Logo */}
       <div className="flex flex-col items-center pt-6 pb-2">
         <img
           src={logo}
@@ -107,7 +106,6 @@ export default function Sidebar() {
         />
       </div>
 
-      {/* NAV */}
       <nav className="flex-1 flex flex-col mt-2">
         {navItems.map((item) => {
           const pathname = location.pathname;
@@ -131,7 +129,6 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* BOTTOM */}
       {role !== "admin" && (
         <div className="bg-secondary flex flex-col items-center text-center">
           {role !== "ngo" && (
@@ -162,7 +159,6 @@ export default function Sidebar() {
         </div>
       )}
 
-      {/* ADMIN LOGOUT */}
       {role === "admin" && (
         <button
           onClick={handleLogout}

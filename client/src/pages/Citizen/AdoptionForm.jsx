@@ -8,7 +8,6 @@ export default function AdoptionForm() {
   const navigate = useNavigate();
   const [userLoading, setUserLoading] = useState(true);
 
-  // --- UI STATES ---
   const [step, setStep] = useState(1);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -17,7 +16,6 @@ export default function AdoptionForm() {
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
 
-  // --- FORM DATA (Mapped to Backend Service Keys) ---
   const [formData, setFormData] = useState({
     full_name: "",
     contact_number: "",
@@ -118,7 +116,6 @@ export default function AdoptionForm() {
 
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // clear error for that field immediately
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
@@ -166,7 +163,6 @@ export default function AdoptionForm() {
     other_pets: formData.other_pets === "None" ? [] : [formData.other_pets],
   });
 
-  // 2. Final Submission to Backend
   const handleSubmit = async () => {
     setSubmitError("");
 
@@ -208,7 +204,7 @@ export default function AdoptionForm() {
     }
   };
   const prevStep = () => {
-    setErrors({}); // clear step errors when going back
+    setErrors({});
     setStep((prev) => prev - 1);
   };
 
@@ -301,7 +297,6 @@ export default function AdoptionForm() {
           Adoption Form
         </h1>
 
-        {/* Pet Summary */}
         <div className="flex justify-between items-center bg-white px-6 py-2 border-2 border-black mb-8 rounded-sm">
           <div>
             <h2 className="text-2xl font-bold text-[#C2185B]">
@@ -320,9 +315,7 @@ export default function AdoptionForm() {
           )}
         </div>
 
-        {/* Multi-Step Form */}
         <div className="bg-[#DED9C4] p-8 border-2 border-black rounded-sm shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-          {/* Progress Indicators */}
           <div className="flex items-center justify-center gap-4 mb-12">
             {[1, 2, 3].map((n) => (
               <React.Fragment key={n}>
@@ -336,7 +329,6 @@ export default function AdoptionForm() {
             ))}
           </div>
 
-          {/* STEP 1: Personal Info */}
           {step === 1 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="space-y-4">
@@ -383,7 +375,6 @@ export default function AdoptionForm() {
             </div>
           )}
 
-          {/* STEP 2: Lifestyle Info */}
           {step === 2 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <SelectField
@@ -443,7 +434,6 @@ export default function AdoptionForm() {
             </div>
           )}
 
-          {/* STEP 3: Motivation */}
           {step === 3 && (
             <div className="space-y-4">
               <label className="block font-black text-[#6A1B9A] uppercase text-sm">
@@ -466,7 +456,6 @@ export default function AdoptionForm() {
             </div>
           )}
 
-          {/* Navigation Buttons */}
           <div className="flex justify-between mt-12 border-t-2 border-black pt-8">
             <button
               onClick={prevStep}
@@ -497,7 +486,6 @@ export default function AdoptionForm() {
   );
 }
 
-// Reusable Helper Components
 const InputField = ({ label, name, error, ...props }) => (
   <div>
     <label className="block text-[10px] font-black uppercase text-gray-500 mb-1">
