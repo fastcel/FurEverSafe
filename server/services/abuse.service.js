@@ -160,7 +160,6 @@ const getNgoReports = async (tab) => {
       pt.name AS pet_type,
 
       l.location_id,
-      l.city,
       l.address,
 
       u.user_id,
@@ -233,7 +232,6 @@ const getReportByIdNgo = async (reportId) => {
       pt.name AS pet_type,
 
       l.location_id,
-      l.city,
       l.address,
 
       u.user_id,
