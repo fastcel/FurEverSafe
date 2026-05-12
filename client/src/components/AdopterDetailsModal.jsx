@@ -50,19 +50,6 @@ const AdopterDetailsModal = ({ adopter, onClose }) => {
                             </div>
                         </div>
 
-                        <div className="flex flex-col justify-start items-end space-y-4 pt-12">
-                            <p className="text-[#6A1B9A] font-bold mr-2">
-                                Want to contact {adopter.full_name || adopter.applicant_name}?
-                            </p>
-                            <button className="flex items-center gap-2 bg-white border-2 border-[#C2185B] text-black px-4 py-1.5 rounded-full text-sm font-bold hover:bg-gray-50 transition-all w-48 shadow-sm">
-                                <span className="bg-black text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px]">📞</span>
-                                Contact via Phone
-                            </button>
-                            <button className="flex items-center gap-2 bg-white border-2 border-[#C2185B] text-black px-4 py-1.5 rounded-full text-sm font-bold hover:bg-gray-50 transition-all w-48 shadow-sm">
-                                <span className="bg-black text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px]">✉</span>
-                                Contact via Email
-                            </button>
-                        </div>
                     </div>
 
                     <div className="space-y-4">
