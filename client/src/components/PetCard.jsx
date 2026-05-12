@@ -2,6 +2,8 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 
 const PetCard = ({
+  pet_id,
+  listing_id,
   name,
   age,
   gender,
@@ -22,7 +24,7 @@ const PetCard = ({
       if (onEdit) onEdit();
     } else {
       // If it's a Citizen, go to the adoption form
-      navigate(`/adopt/${name}`);
+      navigate(`/adopt/${listing_id}`);
     }
   };
 

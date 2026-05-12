@@ -20,6 +20,7 @@ const getAllPets = async (filters) => {
   let query = `
     SELECT
       p.pet_id,
+      l.listing_id,
       p.name,
       p.breed,
       p.gender,
@@ -54,6 +55,9 @@ const getAllPets = async (filters) => {
 
     LEFT JOIN users u
       ON u.user_id = n.user_id
+    
+    LEFT JOIN adoption_listings l
+      ON l.pet_id = p.pet_id
 
     WHERE p.status = 'available'
   `;
@@ -317,6 +321,21 @@ const addPet = async (data, userId) => {
 
     const pet = petResult.rows[0];
 
+const listingResult = await client.query(
+  `
+  INSERT INTO adoption_listings (
+    ngo_id,
+    pet_id,
+    status
+  )
+  VALUES ($1, $2, 'pending')
+  RETURNING listing_id
+  `,
+  [ngoId, pet.pet_id]
+);
+
+const listing_id = listingResult.rows[0].listing_id;
+
     // =====================================================
     // STEP 4: INSERT IMAGES
     // =====================================================
@@ -342,7 +361,10 @@ const addPet = async (data, userId) => {
       description: `Pet ${data.name} added by NGO ${ngoId}`,
     });
 
-    return pet;
+    return {
+  ...pet,
+  listing_id
+};
 
   } catch (err) {
     await client.query("ROLLBACK");

@@ -328,6 +328,34 @@ const rejectApplication = async (userId, applicationId) => {
   }
 };
 
+const getListingById = async (listingId) => {
+  const result = await pool.query(
+    `
+    SELECT 
+      l.listing_id,
+      p.pet_id,
+      p.name,
+      p.breed,
+      p.age,
+      p.city,
+      p.gender,
+      pt.name AS pet_type,
+      (
+        SELECT json_agg(image_url)
+        FROM pet_images pi
+        WHERE pi.pet_id = p.pet_id
+      ) AS images
+    FROM adoption_listings l
+    JOIN pets p ON p.pet_id = l.pet_id
+    LEFT JOIN pet_types pt ON pt.pet_type_id = p.pet_type_id
+    WHERE l.listing_id = $1
+    `,
+    [listingId]
+  );
+
+  return result.rows[0];
+};
+
 module.exports = {
   submitApplication,
   getUserApplications,
@@ -336,4 +364,5 @@ module.exports = {
   getApplicationDetails,
   approveApplication,
   rejectApplication,
+  getListingById,
 };

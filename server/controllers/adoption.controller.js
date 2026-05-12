@@ -173,6 +173,25 @@ const rejectApplication = async (req, res) => {
   }
 };
 
+const getListingById = async (req, res) => {
+  try {
+    const data = await adoptionService.getListingById(req.params.listingId);
+
+    if (!data) {
+      return res.status(404).json({ error: "Listing not found" });
+    }
+
+    return res.status(200).json(data);
+
+  } catch (err) {
+    console.log("🔥 LISTING FETCH ERROR:", err.message);
+
+    return res.status(500).json({
+      error: "Failed to fetch listing",
+    });
+  }
+};
+
 module.exports = {
   submitApplication,
   getUserApplications,
@@ -181,4 +200,5 @@ module.exports = {
   getApplicationDetails,
   approveApplication,
   rejectApplication,
+  getListingById,
 };
