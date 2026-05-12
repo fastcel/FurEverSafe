@@ -7,62 +7,70 @@ export default function NGOAbuseReports() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState("current"); // "current" or "previous"
+  const [activeTab, setActiveTab] = useState("current");
+
+  // Modal state
+  const [modal, setModal] = useState({
+    show: false,
+    type: "",      // "success" | "error"
+    message: "",
+  });
+
+  const showModal = (type, message) => setModal({ show: true, type, message });
+  const closeModal = () => setModal({ show: false, type: "", message: "" });
 
   useEffect(() => {
-    const loadReports = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await fetchNgoReports(activeTab);
-        setReports(data);
-      } catch (err) {
-        console.error("Load reports error:", err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
     loadReports();
   }, [activeTab]);
+
+  const loadReports = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchNgoReports(activeTab);
+      setReports(data);
+    } catch (err) {
+      console.error("Load reports error:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleVerify = async (id) => {
     try {
       await acceptCase(id);
-      alert(`Verified report ${id}`);
-      // Refresh list
       setReports((prev) => prev.filter((r) => r.report_id !== id));
+      showModal("success", "Report has been successfully verified!");
     } catch (err) {
-      alert(`Error verifying report: ${err.message}`);
+      showModal("error", `Failed to verify report: ${err.message}`);
     }
   };
 
   const handleReject = async (id) => {
     try {
       await dismissCase(id);
-      alert(`Rejected report ${id}`);
-      // Refresh list
       setReports((prev) => prev.filter((r) => r.report_id !== id));
+      showModal("success", "Report has been successfully rejected.");
     } catch (err) {
-      alert(`Error rejecting report: ${err.message}`);
+      showModal("error", `Failed to reject report: ${err.message}`);
     }
   };
 
   return (
     <Layout>
       <div className="flex min-h-screen bg-[#f4f1ea]">
-
-        {/* Main Content */}
         <div className="flex-1 p-8 pl-10 pr-12">
+
           {/* Tabs */}
           <div className="flex gap-4 mb-6">
-            <button 
+            <button
               onClick={() => setActiveTab("current")}
               className={`${activeTab === "current" ? "bg-[#c6287c]" : "bg-gray-400"} text-white px-8 py-1.5 rounded-xl font-bold text-lg transition-colors`}
             >
               Current
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab("previous")}
               className={`${activeTab === "previous" ? "bg-[#c6287c]" : "bg-gray-400"} text-white px-8 py-1.5 rounded-xl font-bold text-lg transition-colors`}
             >
@@ -74,7 +82,7 @@ export default function NGOAbuseReports() {
             {activeTab === "current" ? "Current Abuse Reports" : "Previous Abuse Reports"}
           </h1>
 
-          {/* Table Container */}
+          {/* Table */}
           <div className="max-h-[600px] overflow-y-auto border-[3px] border-black bg-[#e0e0e0]">
             {loading ? (
               <div className="p-8 text-center text-xl font-bold">Loading reports...</div>
@@ -120,8 +128,8 @@ export default function NGOAbuseReports() {
                             </button>
                           </div>
                         ) : (
-                          <span className={`font-bold capitalize ${report.status === 'action_taken' ? 'text-green-600' : 'text-red-600'}`}>
-                            {report.status.replace('_', ' ')}
+                          <span className={`font-bold capitalize ${report.status === "action_taken" ? "text-green-600" : "text-red-600"}`}>
+                            {report.status.replace("_", " ")}
                           </span>
                         )}
                       </td>
@@ -141,6 +149,28 @@ export default function NGOAbuseReports() {
           </div>
         </div>
       </div>
+
+      {/* ── Success / Error Modal ── */}
+      {modal.show && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4 w-80">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center text-4xl
+              ${modal.type === "success" ? "bg-green-100" : "bg-red-100"}`}>
+              {modal.type === "success" ? "✅" : "❌"}
+            </div>
+            <p className={`font-bold text-base text-center
+              ${modal.type === "success" ? "text-green-700" : "text-red-600"}`}>
+              {modal.message}
+            </p>
+            <button
+              onClick={closeModal}
+              className="bg-[#c6287c] hover:bg-[#a01d60] text-white font-bold px-10 py-2 rounded"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }
