@@ -45,7 +45,7 @@ export default function LoginPage() {
     localStorage.setItem("user", JSON.stringify(res.data.user));
     console.log("LOGIN RESPONSE:", res.data);
 
-    // ✅ use backend decision
+    // use backend decision
     window.location.href = res.data.redirectTo;
 
   } catch (err) {
@@ -128,16 +128,6 @@ export default function LoginPage() {
       >
         {loading ? "Logging in..." : "Login"}
       </button>
-
-        {/* Anonymous Report */}
-        <div className="mt-3">
-          <button
-            onClick={() => window.location.href = "/report"}
-            className="w-full bg-[#5ba0c8] hover:bg-[#4a8fb3] text-white font-bold py-2.5 rounded-xl text-sm transition"
-          >
-            Report Anonymously
-          </button>
-        </div>
 
         {/* Signup Link */}
         <p className="text-center text-sm text-gray-500 mt-4">

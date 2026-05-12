@@ -70,7 +70,7 @@ export default function App() {
         <Route path="/ngo-dashboard" element={<NGODashboard />} />
         <Route path="/ngo-adoptions" element={<NGOAdoptions />} />
         <Route path="/ngo-notifications/" element={<NGONotifications />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
