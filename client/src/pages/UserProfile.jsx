@@ -108,7 +108,7 @@ export default function UserProfile({ role = "user" }) {
     <Layout>
       <div className="w-full min-h-screen bg-[#f0ebe0] flex flex-col px-12 py-10">
         {/* Heading */}
-        <h1 className="text-4xl font-bold text-[#3a3028] mb-8">User Profile</h1>
+        <h1 className="text-4xl font-black text-primary mb-6">User Profile</h1>
 
         {/* Profile Info Card */}
         <div className="w-full bg-[#e0d9cc] rounded-2xl p-8 mb-8 flex items-center gap-10 shadow-sm">
