@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import bg from "../assets/bgsignup.png";
 import logo from "../assets/logo.png";
 import axios from "axios";
+import isEmail from 'validator/lib/isEmail';
 
 export default function SignupPage() {
   const [role, setRole] = useState("citizen");
@@ -23,9 +24,33 @@ export default function SignupPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const handleContactChange = (e) => {
+    let val = e.target.value.replace(/\D/g, '');
+    if (val.length > 11) val = val.slice(0, 11);
+    if (val.length > 4) val = val.slice(0, 4) + '-' + val.slice(4, 11);
+    setForm({ ...form, contact: val });
+  };
+
   const handleSubmit = async () => {
     setErrors({});
     setLoading(true);
+
+    const newErrors = {};
+
+    if (!isEmail(form.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    const digits = form.contact.replace(/\D/g, '');
+    if (digits.length !== 11) {
+      newErrors.contact = "Please enter a valid 11-digit contact number";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setLoading(false);
+      return;
+    }
 
     try {
       const res = await axios.post("http://localhost:5000/api/auth/signup", {
@@ -36,17 +61,17 @@ export default function SignupPage() {
         role,
       });
 
-      // optional: store token if backend returns it
-      // localStorage.setItem("token", res.data.token);
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      // redirect based on role
       if (role === "citizen") {
-        navigate("/citizen-dashboard");
-      } else if (role === "ngo") {
-        navigate("/ngo-dashboard");
-      } else if (role === "admin") {
-        navigate("/admin/users");
+        window.location.href = "/citizen-dashboard";
+      } else if (role === "ngo"){
+        window.location.href = "/ngo-dashboard";
+      } else if (role === "admin"){
+        window.location.href = "/admin/users";
       }
+
     } catch (err) {
       const message = err.response?.data?.error;
 
@@ -57,6 +82,7 @@ export default function SignupPage() {
       } else {
         setErrors({ general: message || "Server error" });
       }
+
     } finally {
       setLoading(false);
     }
@@ -137,10 +163,14 @@ export default function SignupPage() {
             <input
               name="contact"
               value={form.contact}
-              onChange={handleChange}
+              onChange={handleContactChange}
               placeholder="Enter your Contact Number..."
+              maxLength={12}
               className="w-full bg-gray-100 text-black rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#e87aab]"
             />
+            {errors.contact && (
+              <p className="text-red-500 text-xs mt-1">{errors.contact}</p>
+            )}
           </div>
 
           {/* Password */}

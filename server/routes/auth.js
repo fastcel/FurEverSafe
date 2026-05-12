@@ -79,6 +79,7 @@ router.post("/signup", async (req, res) => {
         [newUserId, name]
       );
     }
+    await client.query("COMMIT");
 
     await auditService.createAuditLog({
       admin_id: newUserId,
@@ -88,10 +89,20 @@ router.post("/signup", async (req, res) => {
       description: `New ${role} registered: ${email}`,
     });
 
-    await client.query("COMMIT");
+    const token = jwt.sign(
+      { id: newUserId, role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
 
     return res.status(201).json({
       message: "Account created successfully",
+      token,
+      user: {
+        id: newUserId,
+        name,
+        role,
+      },
     });
 
   } catch (err) {
