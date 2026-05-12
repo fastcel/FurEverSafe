@@ -35,6 +35,12 @@ router.patch(
   adoptionController.approveApplication
 );
 
+router.get(
+  "/ngo/pets/:petId/approved",
+  authenticate,
+  authorizeRoles("ngo"),
+  adoptionController.getApprovedApplicationForPet
+);
 router.patch(
   "/ngo/applications/:id/reject",
   authenticate,
