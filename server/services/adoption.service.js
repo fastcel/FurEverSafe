@@ -107,12 +107,20 @@ const getUserApplications = async (user_id, tab) => {
     SELECT 
       a.application_id, a.status, a.created_at,
       l.listing_id,
-      p.pet_id, p.name AS pet_name, p.breed, p.age, p.city, p.gender,
-      pt.name AS pet_type
+      p.pet_id, p.name AS pet_name, p.breed, p.age, loc.city, p.gender,
+      pt.name AS pet_type,
+      (
+        SELECT pi.image_url
+        FROM pet_images pi
+        WHERE pi.pet_id = p.pet_id
+        ORDER BY pi.image_id
+        LIMIT 1
+      ) AS image_url
     FROM adoption_applications a
     JOIN adoption_listings l ON l.listing_id = a.listing_id
     JOIN pets p ON p.pet_id = l.pet_id
     LEFT JOIN pet_types pt ON pt.pet_type_id = p.pet_type_id
+    LEFT JOIN locations loc ON loc.location_id = p.location_id
     WHERE a.user_id = $1
   `;
 
@@ -142,15 +150,16 @@ const getNgoPetsWithApplications = async (userId) => {
 
   const result = await pool.query(
     `SELECT
-      p.pet_id, p.name, p.breed, p.age, p.city, p.status,
+      p.pet_id, p.name, p.breed, p.age, loc.city, p.status,
       (SELECT image_url FROM pet_images pi WHERE pi.pet_id = p.pet_id LIMIT 1) AS image_url,
       COUNT(a.application_id) AS total_applications,
       COUNT(CASE WHEN a.status = 'pending' THEN 1 END) AS pending_applications
      FROM pets p
      JOIN adoption_listings l ON l.pet_id = p.pet_id
+     LEFT JOIN locations loc ON loc.location_id = p.location_id
      LEFT JOIN adoption_applications a ON a.listing_id = l.listing_id
      WHERE p.ngo_id = $1
-     GROUP BY p.pet_id
+     GROUP BY p.pet_id, loc.city
      ORDER BY total_applications DESC`,
     [ngoId]
   );
@@ -187,12 +196,13 @@ const getApprovedApplicationForPet = async (userId, petId) => {
       ap.full_name, ap.preferred_contact_method, ap.house_type,
       ap.monthly_income_range, ap.monthly_budget_range, ap.pet_alone_hours,
       ap.has_children, ap.motivation, ap.other_pets,
-      p.pet_id, p.name AS pet_name, p.breed, p.city
+      p.pet_id, p.name AS pet_name, p.breed, loc.city
      FROM adoption_applications a
      JOIN adoption_application_profiles ap ON ap.application_id = a.application_id
      JOIN users u ON u.user_id = a.user_id
      JOIN adoption_listings l ON l.listing_id = a.listing_id
      JOIN pets p ON p.pet_id = l.pet_id
+     LEFT JOIN locations loc ON loc.location_id = p.location_id
      JOIN ngos n ON n.ngo_id = p.ngo_id
      WHERE p.pet_id = $1 AND n.user_id = $2 AND a.status = 'approved'
      LIMIT 1`,
@@ -212,12 +222,13 @@ const getApplicationDetails = async (userId, applicationId) => {
       ap.full_name, ap.preferred_contact_method, ap.house_type,
       ap.monthly_income_range, ap.monthly_budget_range, ap.pet_alone_hours,
       ap.has_children, ap.motivation, ap.other_pets,
-      p.pet_id, p.name AS pet_name, p.breed, p.city
+      p.pet_id, p.name AS pet_name, p.breed, loc.city
      FROM adoption_applications a
      JOIN adoption_application_profiles ap ON ap.application_id = a.application_id
      JOIN users u ON u.user_id = a.user_id
      JOIN adoption_listings l ON l.listing_id = a.listing_id
      JOIN pets p ON p.pet_id = l.pet_id
+     LEFT JOIN locations loc ON loc.location_id = p.location_id
      JOIN ngos n ON n.ngo_id = p.ngo_id
      WHERE a.application_id = $1 AND n.user_id = $2`,
     [applicationId, userId]
@@ -377,7 +388,7 @@ const getListingById = async (listingId) => {
       p.name,
       p.breed,
       p.age,
-      p.city,
+      loc.city,
       p.gender,
       pt.name AS pet_type,
       (
@@ -388,6 +399,7 @@ const getListingById = async (listingId) => {
     FROM adoption_listings l
     JOIN pets p ON p.pet_id = l.pet_id
     LEFT JOIN pet_types pt ON pt.pet_type_id = p.pet_type_id
+    LEFT JOIN locations loc ON loc.location_id = p.location_id
     WHERE l.listing_id = $1
     `,
     [listingId]

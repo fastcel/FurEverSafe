@@ -25,7 +25,7 @@ const getAllPets = async (filters) => {
       p.breed,
       p.gender,
       p.age,
-      p.city,
+      COALESCE(loc.city, loc.address) AS city,
       p.vaccination_status,
       p.description,
       p.created_at,
@@ -49,6 +49,9 @@ const getAllPets = async (filters) => {
 
     LEFT JOIN pet_types pt
       ON pt.pet_type_id = p.pet_type_id
+
+    LEFT JOIN locations loc
+      ON loc.location_id = p.location_id
 
     LEFT JOIN ngos n
       ON n.ngo_id = p.ngo_id
@@ -74,7 +77,7 @@ const getAllPets = async (filters) => {
       AND (
         p.name ILIKE $${values.length}
         OR p.breed ILIKE $${values.length}
-        OR p.city ILIKE $${values.length}
+        OR COALESCE(loc.city, loc.address) ILIKE $${values.length}
         OR pt.name ILIKE $${values.length}
       )
     `;
@@ -102,7 +105,7 @@ const getAllPets = async (filters) => {
     values.push(city);
 
     query += `
-      AND LOWER(p.city) = LOWER($${values.length})
+      AND LOWER(COALESCE(loc.city, loc.address)) = LOWER($${values.length})
     `;
   }
 
@@ -214,7 +217,7 @@ const getPetById = async (id) => {
       p.breed,
       p.gender,
       p.age,
-      p.city,
+      COALESCE(loc.city, loc.address) AS city,
       p.vaccination_status,
       p.description,
       p.created_at,
@@ -235,6 +238,9 @@ const getPetById = async (id) => {
 
     LEFT JOIN pet_types pt
       ON pt.pet_type_id = p.pet_type_id
+
+    LEFT JOIN locations loc
+      ON loc.location_id = p.location_id
 
     LEFT JOIN ngos n
       ON n.ngo_id = p.ngo_id
@@ -324,14 +330,13 @@ const addPet = async (data, userId) => {
 const listingResult = await client.query(
   `
   INSERT INTO adoption_listings (
-    ngo_id,
     pet_id,
     status
   )
   VALUES ($1, $2, 'pending')
   RETURNING listing_id
   `,
-  [ngoId, pet.pet_id]
+  [pet.pet_id]
 );
 
 const listing_id = listingResult.rows[0].listing_id;
@@ -396,7 +401,7 @@ const getNgoPets = async (userId) => {
       p.breed,
       p.gender,
       p.age,
-      p.city,
+      loc.city,
       p.vaccination_status,
       p.description,
       p.status,
@@ -420,6 +425,9 @@ const getNgoPets = async (userId) => {
 
     LEFT JOIN pet_types pt
       ON pt.pet_type_id = p.pet_type_id
+
+    LEFT JOIN locations loc
+      ON loc.location_id = p.location_id
 
     WHERE p.ngo_id = $1
 
@@ -546,7 +554,7 @@ const getUserAppliedPets = async (userId) => {
       p.name,
       p.breed,
       p.age,
-      p.city,
+      loc.city AS city,
       p.status,
 
       pt.name AS pet_type,
@@ -570,6 +578,9 @@ const getUserAppliedPets = async (userId) => {
 
     LEFT JOIN pet_types pt
       ON pt.pet_type_id = p.pet_type_id
+
+    LEFT JOIN locations loc
+      ON loc.location_id = p.location_id
 
     WHERE aa.user_id = $1
 

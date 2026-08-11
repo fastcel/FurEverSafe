@@ -8,7 +8,7 @@ const getAllPets = async (req, res) => {
     const pets = await petService.getAllPets(req.query);
     res.json(pets);
   } catch (err) {
-    console.log(err);
+    console.error("GET /api/pets ERROR:", err.message);
     res.status(500).json({ error: "Failed to fetch pets" });
   }
 };

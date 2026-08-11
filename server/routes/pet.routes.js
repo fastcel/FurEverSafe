@@ -12,6 +12,11 @@ router.get(
   authorizeRoles("ngo"),
   petController.getNgoPets
 );
+router.get(
+  "/user/applied",
+  authenticate,
+  petController.getUserAppliedPets
+);
 router.patch(
   "/ngo/:id",
   authenticate,
@@ -19,10 +24,5 @@ router.patch(
   petController.updatePetPatch
 );
 router.get("/:id", petController.getPetById);
-router.get(
-  "/user/applied",
-  authenticate,
-  petController.getUserAppliedPets
-);
 
 module.exports = router;

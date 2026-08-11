@@ -11,10 +11,14 @@ const getUserMilestones = async (userId) => {
 
   /* ── 2. BREAKDOWN from reward_transactions ── */
   const txResult = await pool.query(
-    `SELECT source_type, SUM(points)::int AS points, COUNT(*)::int AS count
-     FROM reward_transactions
-     WHERE user_id = $1
-     GROUP BY source_type`,
+    `SELECT rt.source_type,
+            COALESCE(SUM(rty.default_points), 0)::int AS points,
+            COUNT(*)::int AS count
+     FROM reward_transactions rt
+     LEFT JOIN reward_types rty
+       ON rty.reward_type_id = rt.reward_type_id
+     WHERE rt.user_id = $1
+     GROUP BY rt.source_type`,
     [userId]
   );
 
